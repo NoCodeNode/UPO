@@ -1,0 +1,304 @@
+<div align="center">
+
+# ✨ UPO — Universal Prompt Optimizer
+
+### 🚀 Supercharge Your Text with Google Gemini AI
+
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/NoCodeNode/UPO)
+[![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+[![License](https://img.shields.io/badge/license-Custom-orange.svg)](https://github.com/NoCodeNode/UPO)
+
+**Transform any text on any webpage with the power of AI — instantly.**
+
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Setup](#️-setup) • [Contributing](#-contributing)
+
+---
+
+</div>
+
+## 🎯 What is UPO?
+
+**Universal Prompt Optimizer** is a powerful browser extension that uses Google's cutting-edge Gemini AI to optimize, enhance, and improve any text you select on the web. Whether you're writing emails, coding, or crafting content — UPO makes it better with a single keystroke.
+
+### 🌟 Why UPO?
+
+- ⚡ **Lightning Fast** — Optimize text in seconds with `Ctrl+Q`
+- 🎨 **Seamless Integration** — Works on every website, no exceptions
+- 🔄 **In-Place Magic** — Optimized text replaces your selection instantly
+- 🧠 **Gemini Powered** — Leverages Google's most advanced AI
+- 🎯 **Zero Friction** — No copy-paste, no switching tabs
+- 🔒 **Private & Secure** — Your API key stays local
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### ⌨️ Keyboard Shortcut
+Press **Ctrl+Q** (Win/Linux) or **Cmd+Q** (Mac) to instantly optimize selected text
+
+> **Mac Users**: You can customize the shortcut to avoid conflicts with Cmd+Q (Quit). [Learn how](#-customizing-keyboard-shortcuts)
+
+</td>
+<td width="50%">
+
+### 🖱️ Context Menu
+Right-click any selection and choose "Optimize with UPO" from the menu
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🔄 In-Place Replacement
+No copy-paste needed — optimized text appears right where you selected it
+
+</td>
+<td width="50%">
+
+### ⚙️ Customizable
+Fine-tune settings and preferences through an intuitive options page
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Installation
+
+### 📦 Quick Install (From Source)
+
+```bash
+# Clone the repository
+git clone https://github.com/NoCodeNode/UPO.git
+
+# Navigate to the directory
+cd UPO
+```
+
+### 🔧 Load in Browser
+
+1. **Open Extensions Page**
+   - Chrome: Navigate to `chrome://extensions/`
+   - Edge: Navigate to `edge://extensions/`
+
+2. **Enable Developer Mode**
+   - Toggle the switch in the top-right corner
+
+3. **Load Extension**
+   - Click "Load unpacked"
+   - Select the `UPO` folder
+
+4. **You're Ready!** 🎉
+   - The UPO icon appears in your toolbar
+
+---
+
+## ⚙️ Setup
+
+### 🔑 Get Your Gemini API Key
+
+<details>
+<summary>Click to expand setup instructions</summary>
+
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click **"Create API Key"**
+4. Copy your new API key
+5. Open UPO extension options
+6. Paste your API key
+7. Save settings
+
+**Note**: Your API key is stored locally and never shared.
+
+</details>
+
+### ⌨️ Customizing Keyboard Shortcuts
+
+<details>
+<summary><strong>Mac Users</strong>: Change Cmd+Q to avoid quitting apps</summary>
+
+The default `Cmd+Q` shortcut conflicts with the "Quit Application" command on macOS. Here's how to customize it:
+
+#### For Chrome:
+1. Go to `chrome://extensions/shortcuts`
+2. Find **UPO — Universal Prompt Optimizer**
+3. Click the pencil icon next to "Optimize selected text with Gemini"
+4. Press your preferred shortcut (e.g., `Cmd+Shift+Q` or `Cmd+E`)
+5. Click "OK"
+
+#### For Edge:
+1. Go to `edge://extensions/shortcuts`
+2. Find **UPO — Universal Prompt Optimizer**
+3. Click in the shortcut field
+4. Press your preferred shortcut (e.g., `Cmd+Shift+Q` or `Cmd+E`)
+5. Changes save automatically
+
+#### Recommended Alternatives:
+- `Cmd+Shift+Q` - Similar but safer
+- `Cmd+E` - Easy to reach
+- `Cmd+Shift+O` - O for Optimize
+- `Cmd+Option+Q` - Extra modifier for safety
+
+</details>
+
+---
+
+## 📖 Usage
+
+### Method 1️⃣: Keyboard Shortcut (Recommended)
+
+```
+1. Select text on any webpage
+2. Press Ctrl+Q (Windows/Linux) or your custom shortcut (Mac)
+3. Watch the magic happen ✨
+4. Optimized text replaces your selection
+```
+
+> **💡 Tip**: Mac users should customize the shortcut first to avoid conflicts!
+
+### Method 2️⃣: Context Menu
+
+```
+1. Select text on any webpage
+2. Right-click on the selection
+3. Choose "Optimize with UPO"
+4. Get your optimized result
+```
+
+---
+
+## 🏗️ Project Structure
+
+```
+UPO/
+│
+├── 📄 manifest.json          # Extension configuration
+├── ⚙️ background.js          # Service worker & background tasks
+│
+├── 📁 content/               # Content scripts for web pages
+│   ├── content.js
+│   └── content.css
+│
+├── 📁 icons/                 # Extension icons (all sizes)
+│   ├── icon16.png
+│   ├── icon32.png
+│   ├── icon48.png
+│   └── icon128.png
+│
+├── 📁 options/               # Settings & configuration UI
+├── 📁 popup/                 # Extension popup interface
+├── 📁 shared/                # Shared utilities & helpers
+└── 📁 welcome/               # Onboarding experience
+```
+
+---
+
+## 🛠️ Tech Stack
+
+<div align="center">
+
+| Technology | Purpose |
+|------------|---------|
+| ![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black) | Core functionality |
+| ![Chrome](https://img.shields.io/badge/-Manifest_V3-4285F4?style=flat-square&logo=google-chrome&logoColor=white) | Extension platform |
+| ![Gemini](https://img.shields.io/badge/-Google_Gemini-8E75B2?style=flat-square&logo=google&logoColor=white) | AI optimization engine |
+
+</div>
+
+---
+
+## 🔐 Permissions Explained
+
+| Permission | Why We Need It |
+|------------|----------------|
+| `storage` | Save your API key and preferences securely |
+| `activeTab` | Access the current tab to replace text |
+| `scripting` | Inject content scripts for text manipulation |
+| `contextMenus` | Add right-click menu option |
+| `tabs` | Manage active tabs and communication |
+| `notifications` | Show optimization status updates |
+
+---
+
+## 🤝 Contributing
+
+Contributions are **welcome** and **appreciated**! Here's how you can help:
+
+1. 🍴 Fork the repository
+2. 🔨 Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. 💾 Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. 📤 Push to the branch (`git push origin feature/AmazingFeature`)
+5. 🎉 Open a Pull Request
+
+### 💡 Ideas for Contributions
+
+- 🐛 Bug fixes
+- ✨ New features
+- 📚 Documentation improvements
+- 🎨 UI/UX enhancements
+- 🌍 Internationalization
+
+---
+
+## 👨‍💻 Author
+
+<div align="center">
+
+**Arnab Mandal**
+
+[![Email](https://img.shields.io/badge/Email-hello%40arnabmandal.com-red?style=flat-square&logo=gmail)](mailto:hello@arnabmandal.com)
+[![GitHub](https://img.shields.io/badge/GitHub-NoCodeNode-181717?style=flat-square&logo=github)](https://github.com/NoCodeNode)
+
+</div>
+
+---
+
+## 📊 Version History
+
+| Version | Release Date | Highlights |
+|---------|--------------|------------|
+| 2.0.0 | Current | Manifest V3, Gemini integration, Modern UI |
+
+---
+
+## 🔒 Privacy & Security
+
+Your privacy matters. Here's our commitment:
+
+- ✅ API keys stored **locally** in your browser
+- ✅ No data collection or analytics
+- ✅ No third-party tracking
+- ✅ Only communicates with Google Gemini API
+- ✅ Open source — audit the code yourself
+
+---
+
+## 📜 License
+
+This project is currently under custom licensing. Please contact the author for usage rights and permissions.
+
+---
+
+## 💖 Support
+
+If you find UPO helpful, consider:
+
+- ⭐ Starring this repository
+- 🐛 Reporting bugs via [Issues](https://github.com/NoCodeNode/UPO/issues)
+- 💡 Suggesting features
+- 📢 Sharing with others
+
+---
+
+<div align="center">
+
+### 🌟 Made with ❤️ by [NoCodeNode](https://github.com/NoCodeNode)
+
+**[⬆ Back to Top](#-upo--universal-prompt-optimizer)**
+
+</div>
