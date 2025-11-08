@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UPO — Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body class="ui-bg">
+  <main class="container">
+    <header class="topbar">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
+          <defs>
+            <linearGradient id="g2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#2563eb"/>
+              <stop offset="1" stop-color="#22c55e"/>
+            </linearGradient>
+          </defs>
+          <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#g2)"/>
+          <path d="M28 9l-6 13h8l-10 17 4-12h-8l12-18z" fill="white" opacity="0.95"/>
+        </svg>
+        <div>
+          <h1>UPO — Universal Prompt Optimizer</h1>
+          <p class="muted">Built by Arnab Mandal (hello@arnabmandal.com)</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="btnShortcuts" class="btn ghost">
+          <span class="btn-ico" aria-hidden="true">⌨️</span> Change Shortcut
+        </button>
+        <button id="btnAPIKeys" class="btn ghost">
+          <span class="btn-ico" aria-hidden="true">🔑</span> Get Gemini API Key
+        </button>
+      </div>
+    </header>
+
+    <section class="grid two">
+      <form id="settingsForm" class="card">
+        <h2 class="h2">Configuration</h2>
+
+        <label class="field">
+          <span class="label">Gemini API Key</span>
+          <input id="apiKey" type="password" placeholder="Paste your API key" autocomplete="off" />
+          <small class="hint">Stored via Chrome Sync on your account.</small>
+        </label>
+
+        <label class="field">
+          <span class="label">Model</span>
+          <select id="model">
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="label">Custom System Prompt (optional)</span>
+          <textarea id="systemPrompt" rows="8" placeholder="Override the default behavior here. Leave empty to use the built-in UPO prompt."></textarea>
+          <small class="hint">When provided, this replaces UPO’s default instruction for all optimizations.</small>
+        </label>
+
+        <div class="row">
+          <button type="submit" class="btn primary">
+            <span class="btn-ico" aria-hidden="true">💾</span> Save Settings
+          </button>
+          <button id="btnClear" type="button" class="btn ghost">
+            <span class="btn-ico" aria-hidden="true">🧹</span> Clear
+          </button>
+          <button id="btnTest" type="button" class="btn ghost">
+            <span class="btn-ico" aria-hidden="true">🧪</span> Test Call
+          </button>
+        </div>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <pre id="sampleOut" class="sample hidden"></pre>
+      </form>
+
+      <article class="card">
+        <h2 class="h2">How UPO Works</h2>
+        <p>UPO transforms a rough idea into a <strong>well-structured, high-clarity prompt</strong> for AI. Write your basic thought or draft, and UPO refines it to get better answers.</p>
+
+        <h2 class="h2 mt">A Crucial Tip for Best Results</h2>
+        <p>UPO is best for crafting the <strong>very first prompt</strong> in a new AI conversation. It <strong>does not</strong> have access to the context of an ongoing chat.</p>
+        <p>If you use it mid-conversation, the optimized text might not match the existing thread—because UPO cannot see prior messages.</p>
+        <p class="strong">For best results, use UPO only to generate your <strong>initial prompt</strong> that starts the conversation.</p>
+
+        <h3 class="h3 mt">Keyboard Shortcut</h3>
+        <p>The default is <strong>Ctrl + Q</strong>. On macOS, <strong>Cmd + Q</strong> normally quits Chrome, so you should change the shortcut if needed.</p>
+        <p>Use the <em>Change Shortcut</em> button above to open the Chrome page where you can set your preferred key.</p>
+
+        <h3 class="h3 mt">Get a Free Gemini API Key</h3>
+        <p>Sign in with your Google account and create a key at the official Gemini page. Then paste it here.</p>
+        <div class="row">
+          <button id="btnAPIKeys2" class="btn ghost" type="button">Open API Keys Page</button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>

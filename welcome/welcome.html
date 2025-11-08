@@ -5,13 +5,14 @@
   <title>Welcome to UPO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="../shared/animations.css" />
   <link rel="stylesheet" href="welcome.css" />
 </head>
-<body class="ui-bg center">
-  <main class="hero">
-    <div class="hero-card">
-      <div class="mark">
-        <svg width="52" height="52" viewBox="0 0 64 64" fill="none">
+<body class="ui-bg center" data-theme="dark">
+  <main class="hero scale-in">
+    <div class="hero-card stagger-children">
+      <div class="mark bounce">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
           <defs>
             <linearGradient id="gw" x1="0" y1="0" x2="64" y2="64">
               <stop stop-color="#2563eb"/>
@@ -23,39 +24,71 @@
         </svg>
       </div>
       <h1>Welcome to UPO</h1>
-      <p>Turn rough ideas into high-impact prompts for AI. Let’s get set up.</p>
+      <p class="hero-subtitle">Transform rough ideas into high-impact prompts for AI</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🎯</span>
+          <h3 class="feature-title">5 Smart Modes</h3>
+          <p class="feature-desc">Precise, Quick, Detailed, Creative, and Professional optimization</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3 class="feature-title">Instant Optimization</h3>
+          <p class="feature-desc">Select text and press Ctrl+Q to optimize in place</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📚</span>
+          <h3 class="feature-title">History & Library</h3>
+          <p class="feature-desc">Track optimizations and save your best prompts</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌙</span>
+          <h3 class="feature-title">Dark & Light</h3>
+          <p class="feature-desc">Beautiful themes that match your system preferences</p>
+        </div>
+      </div>
 
       <div class="steps">
         <div class="step">
           <span class="num">1</span>
           <div>
-            <h3>Add your Gemini API key</h3>
-            <p>Generate a free key with your Google account, then paste it in Settings.</p>
+            <h3>Get your Gemini API key</h3>
+            <p>Generate a free key from Google AI Studio with your Google account.</p>
           </div>
         </div>
         <div class="step">
           <span class="num">2</span>
           <div>
-            <h3>Pick a model</h3>
-            <p>We recommend <strong>Gemini 2.5 Pro</strong> for best results.</p>
+            <h3>Configure settings</h3>
+            <p>Add your API key and choose <strong>Gemini 2.5 Pro</strong> for best results.</p>
           </div>
         </div>
         <div class="step">
           <span class="num">3</span>
           <div>
-            <h3>Set your shortcut</h3>
-            <p>Default is <strong>Ctrl + Q</strong>. On macOS, change it to avoid quitting Chrome.</p>
+            <h3>Customize your shortcut</h3>
+            <p>Default is <strong>Ctrl + Q</strong>. Mac users: change it to avoid quitting apps.</p>
           </div>
         </div>
       </div>
 
-      <div class="row">
-        <button id="btnGetKey" class="btn ghost">Get API Key</button>
-        <button id="btnOpenSettings" class="btn primary">Open Settings</button>
+      <div class="cta-section">
+        <button id="btnOpenSettings" class="btn primary btn-interactive ripple">
+          <span class="btn-ico">⚙️</span>
+          Get Started
+        </button>
+        <button id="btnGetKey" class="btn ghost btn-interactive">
+          <span class="btn-ico">🔑</span>
+          Get API Key
+        </button>
       </div>
 
-      <div class="muted small mt">
-        Built by Arnab Mandal (hello@arnabmandal.com)
+      <div class="footer-note">
+        <p class="muted small">
+          ✨ Built with ❤️ by Arnab Mandal • 
+          <a href="mailto:hello@arnabmandal.com" class="footer-link">hello@arnabmandal.com</a>
+        </p>
       </div>
     </div>
   </main>

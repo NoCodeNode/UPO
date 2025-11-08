@@ -5,97 +5,367 @@
   <title>UPO — Settings</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="../shared/animations.css" />
   <link rel="stylesheet" href="options.css" />
 </head>
-<body class="ui-bg">
-  <main class="container">
-    <header class="topbar">
-      <div class="brand">
-        <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
+<body class="ui-bg" data-theme="dark">
+  <main class="options-container fade-in">
+    <!-- Header -->
+    <header class="options-header">
+      <div class="brand-section">
+        <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-logo">
           <defs>
             <linearGradient id="g2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
               <stop stop-color="#2563eb"/>
-              <stop offset="1" stop-color="#22c55e"/>
+              <stop offset="1" stop-color="#10b981"/>
             </linearGradient>
           </defs>
           <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#g2)"/>
           <path d="M28 9l-6 13h8l-10 17 4-12h-8l12-18z" fill="white" opacity="0.95"/>
         </svg>
-        <div>
-          <h1>UPO — Universal Prompt Optimizer</h1>
-          <p class="muted">Built by Arnab Mandal (hello@arnabmandal.com)</p>
+        <div class="brand-text">
+          <h1 class="brand-title">UPO Settings</h1>
+          <p class="brand-subtitle">Universal Prompt Optimizer Configuration</p>
         </div>
       </div>
-      <div class="top-actions">
-        <button id="btnShortcuts" class="btn ghost">
-          <span class="btn-ico" aria-hidden="true">⌨️</span> Change Shortcut
-        </button>
-        <button id="btnAPIKeys" class="btn ghost">
-          <span class="btn-ico" aria-hidden="true">🔑</span> Get Gemini API Key
+      <div class="header-actions">
+        <button id="themeToggle" class="icon-btn" title="Toggle theme">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
         </button>
       </div>
     </header>
 
-    <section class="grid two">
-      <form id="settingsForm" class="card">
-        <h2 class="h2">Configuration</h2>
+    <div class="options-layout">
+      <!-- Sidebar Tabs -->
+      <nav class="sidebar-tabs" role="tablist">
+        <button class="sidebar-tab active" role="tab" data-tab="general">
+          <span class="tab-icon">⚙️</span>
+          <span class="tab-label">General</span>
+        </button>
+        <button class="sidebar-tab" role="tab" data-tab="optimization">
+          <span class="tab-icon">⚡</span>
+          <span class="tab-label">Optimization</span>
+        </button>
+        <button class="sidebar-tab" role="tab" data-tab="shortcuts">
+          <span class="tab-icon">⌨️</span>
+          <span class="tab-label">Shortcuts</span>
+        </button>
+        <button class="sidebar-tab" role="tab" data-tab="usage">
+          <span class="tab-icon">📊</span>
+          <span class="tab-label">Usage & History</span>
+        </button>
+        <button class="sidebar-tab" role="tab" data-tab="about">
+          <span class="tab-icon">ℹ️</span>
+          <span class="tab-label">About</span>
+        </button>
+      </nav>
 
-        <label class="field">
-          <span class="label">Gemini API Key</span>
-          <input id="apiKey" type="password" placeholder="Paste your API key" autocomplete="off" />
-          <small class="hint">Stored via Chrome Sync on your account.</small>
-        </label>
+      <!-- Tab Content Area -->
+      <div class="content-area">
+        <!-- General Tab -->
+        <div class="tab-panel active stagger-children" id="panel-general">
+          <h2 class="panel-title">General Settings</h2>
+          
+          <form id="settingsForm" class="settings-form">
+            <div class="form-section">
+              <h3 class="form-section-title">API Configuration</h3>
+              
+              <div class="form-field">
+                <label for="apiKey" class="field-label">
+                  Gemini API Key
+                  <span class="field-required">*</span>
+                </label>
+                <div class="input-group">
+                  <input id="apiKey" type="password" placeholder="Paste your API key here" required />
+                  <button type="button" id="toggleApiKey" class="input-btn" title="Show/Hide">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="field-hint">
+                  Your API key is stored securely in Chrome Sync.
+                  <a href="#" id="getApiKeyLink" class="field-link">Get a free key from Google AI Studio</a>
+                </p>
+              </div>
 
-        <label class="field">
-          <span class="label">Model</span>
-          <select id="model">
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-          </select>
-        </label>
+              <div class="form-field">
+                <label for="model" class="field-label">Model</label>
+                <select id="model">
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro (Recommended)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Faster)</option>
+                </select>
+                <p class="field-hint">Pro offers better quality, Flash is faster and cheaper.</p>
+              </div>
+            </div>
 
-        <label class="field">
-          <span class="label">Custom System Prompt (optional)</span>
-          <textarea id="systemPrompt" rows="8" placeholder="Override the default behavior here. Leave empty to use the built-in UPO prompt."></textarea>
-          <small class="hint">When provided, this replaces UPO’s default instruction for all optimizations.</small>
-        </label>
+            <div class="form-section">
+              <h3 class="form-section-title">Theme</h3>
+              
+              <div class="theme-selector">
+                <button type="button" class="theme-option" data-theme="auto">
+                  <span class="theme-icon">🌗</span>
+                  <span class="theme-name">Auto</span>
+                  <span class="theme-desc">System</span>
+                </button>
+                <button type="button" class="theme-option" data-theme="light">
+                  <span class="theme-icon">☀️</span>
+                  <span class="theme-name">Light</span>
+                  <span class="theme-desc">Day mode</span>
+                </button>
+                <button type="button" class="theme-option" data-theme="dark">
+                  <span class="theme-icon">🌙</span>
+                  <span class="theme-name">Dark</span>
+                  <span class="theme-desc">Night mode</span>
+                </button>
+              </div>
+            </div>
 
-        <div class="row">
-          <button type="submit" class="btn primary">
-            <span class="btn-ico" aria-hidden="true">💾</span> Save Settings
-          </button>
-          <button id="btnClear" type="button" class="btn ghost">
-            <span class="btn-ico" aria-hidden="true">🧹</span> Clear
-          </button>
-          <button id="btnTest" type="button" class="btn ghost">
-            <span class="btn-ico" aria-hidden="true">🧪</span> Test Call
-          </button>
+            <div class="form-actions">
+              <button type="submit" class="btn primary btn-interactive">
+                <span class="btn-ico">💾</span>
+                Save Settings
+              </button>
+              <button type="button" id="btnTest" class="btn ghost btn-interactive">
+                <span class="btn-ico">🧪</span>
+                Test API Connection
+              </button>
+              <button type="button" id="btnClear" class="btn ghost btn-interactive">
+                <span class="btn-ico">🧹</span>
+                Clear All Data
+              </button>
+            </div>
+
+            <div id="status" class="status-message" role="status" aria-live="polite"></div>
+            <pre id="sampleOut" class="test-output hidden"></pre>
+          </form>
         </div>
 
-        <div id="status" class="status" role="status" aria-live="polite"></div>
-        <pre id="sampleOut" class="sample hidden"></pre>
-      </form>
+        <!-- Optimization Tab -->
+        <div class="tab-panel" id="panel-optimization">
+          <h2 class="panel-title">Optimization Settings</h2>
+          
+          <div class="form-section">
+            <h3 class="form-section-title">Custom System Prompt</h3>
+            <p class="section-description">
+              Override the default UPO system prompt with your own. Leave empty to use the built-in prompt.
+            </p>
+            
+            <div class="form-field">
+              <label for="systemPrompt" class="field-label">Custom Prompt</label>
+              <textarea id="systemPrompt" rows="10" placeholder="Enter your custom system prompt here (optional)"></textarea>
+              <p class="field-hint">This will replace the default prompt for all optimization modes.</p>
+            </div>
 
-      <article class="card">
-        <h2 class="h2">How UPO Works</h2>
-        <p>UPO transforms a rough idea into a <strong>well-structured, high-clarity prompt</strong> for AI. Write your basic thought or draft, and UPO refines it to get better answers.</p>
+            <button id="saveCustomPrompt" class="btn primary btn-interactive">
+              <span class="btn-ico">💾</span>
+              Save Custom Prompt
+            </button>
+          </div>
 
-        <h2 class="h2 mt">A Crucial Tip for Best Results</h2>
-        <p>UPO is best for crafting the <strong>very first prompt</strong> in a new AI conversation. It <strong>does not</strong> have access to the context of an ongoing chat.</p>
-        <p>If you use it mid-conversation, the optimized text might not match the existing thread—because UPO cannot see prior messages.</p>
-        <p class="strong">For best results, use UPO only to generate your <strong>initial prompt</strong> that starts the conversation.</p>
-
-        <h3 class="h3 mt">Keyboard Shortcut</h3>
-        <p>The default is <strong>Ctrl + Q</strong>. On macOS, <strong>Cmd + Q</strong> normally quits Chrome, so you should change the shortcut if needed.</p>
-        <p>Use the <em>Change Shortcut</em> button above to open the Chrome page where you can set your preferred key.</p>
-
-        <h3 class="h3 mt">Get a Free Gemini API Key</h3>
-        <p>Sign in with your Google account and create a key at the official Gemini page. Then paste it here.</p>
-        <div class="row">
-          <button id="btnAPIKeys2" class="btn ghost" type="button">Open API Keys Page</button>
+          <div class="form-section">
+            <h3 class="form-section-title">Optimization Modes</h3>
+            <div class="modes-info">
+              <div class="mode-info-card">
+                <span class="mode-info-icon">🎯</span>
+                <div class="mode-info-text">
+                  <h4 class="mode-info-title">Precise Mode</h4>
+                  <p class="mode-info-desc">Clarifies intent and adds specific details (Default)</p>
+                </div>
+              </div>
+              <div class="mode-info-card">
+                <span class="mode-info-icon">⚡</span>
+                <div class="mode-info-text">
+                  <h4 class="mode-info-title">Quick Mode</h4>
+                  <p class="mode-info-desc">Minimal changes, faster processing</p>
+                </div>
+              </div>
+              <div class="mode-info-card">
+                <span class="mode-info-icon">📝</span>
+                <div class="mode-info-text">
+                  <h4 class="mode-info-title">Detailed Mode</h4>
+                  <p class="mode-info-desc">Expands with context and examples</p>
+                </div>
+              </div>
+              <div class="mode-info-card">
+                <span class="mode-info-icon">🎨</span>
+                <div class="mode-info-text">
+                  <h4 class="mode-info-title">Creative Mode</h4>
+                  <p class="mode-info-desc">Optimizes for storytelling prompts</p>
+                </div>
+              </div>
+              <div class="mode-info-card">
+                <span class="mode-info-icon">💼</span>
+                <div class="mode-info-text">
+                  <h4 class="mode-info-title">Professional Mode</h4>
+                  <p class="mode-info-desc">Formal tone for business use</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </article>
-    </section>
+
+        <!-- Shortcuts Tab -->
+        <div class="tab-panel" id="panel-shortcuts">
+          <h2 class="panel-title">Keyboard Shortcuts</h2>
+          
+          <div class="shortcuts-section">
+            <div class="shortcut-card">
+              <div class="shortcut-info">
+                <h3 class="shortcut-title">Optimize Selected Text</h3>
+                <p class="shortcut-desc">Trigger optimization on selected text</p>
+              </div>
+              <div class="shortcut-keys">
+                <kbd>Ctrl</kbd> + <kbd>Q</kbd>
+                <p class="shortcut-hint">(Cmd+Q on Mac - may conflict)</p>
+              </div>
+            </div>
+
+            <div class="alert alert-warning">
+              <span class="alert-icon">⚠️</span>
+              <div class="alert-content">
+                <p class="alert-title">Mac Users: Customize Your Shortcut</p>
+                <p class="alert-text">
+                  The default Cmd+Q shortcut quits applications on macOS. 
+                  We recommend changing it to avoid conflicts.
+                </p>
+              </div>
+            </div>
+
+            <button id="btnOpenShortcuts" class="btn primary btn-interactive">
+              <span class="btn-ico">⌨️</span>
+              Configure Shortcuts in Chrome
+            </button>
+
+            <div class="shortcuts-recommendations">
+              <h3 class="form-section-title">Recommended Alternatives (Mac)</h3>
+              <ul class="recommendations-list">
+                <li><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>Q</kbd> - Similar but safer</li>
+                <li><kbd>Cmd</kbd> + <kbd>E</kbd> - Easy to reach</li>
+                <li><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>O</kbd> - O for Optimize</li>
+                <li><kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>Q</kbd> - Extra modifier for safety</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Usage & History Tab -->
+        <div class="tab-panel" id="panel-usage">
+          <h2 class="panel-title">Usage & History</h2>
+          
+          <div class="stats-dashboard">
+            <div class="stat-card">
+              <span class="stat-icon">⚡</span>
+              <div class="stat-content">
+                <span class="stat-value" id="totalOptimizations">0</span>
+                <span class="stat-label">Total Optimizations</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">📝</span>
+              <div class="stat-content">
+                <span class="stat-value" id="avgCharChange">0</span>
+                <span class="stat-label">Avg. Char Change</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">📚</span>
+              <div class="stat-content">
+                <span class="stat-value" id="librarySize">0</span>
+                <span class="stat-label">Saved Prompts</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3 class="form-section-title">History Management</h3>
+            <p class="section-description">
+              UPO stores your last 50 optimizations locally. History is never sent to external servers.
+            </p>
+            
+            <div class="history-actions">
+              <button id="btnViewHistory" class="btn ghost btn-interactive">
+                <span class="btn-ico">📚</span>
+                View Full History
+              </button>
+              <button id="btnClearHistory" class="btn ghost btn-interactive">
+                <span class="btn-ico">🗑️</span>
+                Clear History
+              </button>
+              <button id="btnExportData" class="btn ghost btn-interactive">
+                <span class="btn-ico">📤</span>
+                Export Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- About Tab -->
+        <div class="tab-panel" id="panel-about">
+          <h2 class="panel-title">About UPO</h2>
+          
+          <div class="about-content">
+            <div class="about-section">
+              <h3 class="about-title">Universal Prompt Optimizer</h3>
+              <p class="about-version">Version 2.0.0</p>
+              <p class="about-description">
+                Transform your basic prompts into optimized versions that get better results from any AI tool.
+                UPO uses Google Gemini AI to instantly refine your prompts with better structure, clarity, and specificity.
+              </p>
+            </div>
+
+            <div class="about-section">
+              <h3 class="about-subtitle">Author</h3>
+              <p class="about-author">
+                <strong>Arnab Mandal</strong><br>
+                <a href="mailto:hello@arnabmandal.com" class="about-link">hello@arnabmandal.com</a><br>
+                <a href="https://github.com/NoCodeNode" class="about-link" target="_blank">GitHub: @NoCodeNode</a>
+              </p>
+            </div>
+
+            <div class="about-section">
+              <h3 class="about-subtitle">Features</h3>
+              <ul class="features-list">
+                <li>✨ 5 Smart optimization modes</li>
+                <li>🎯 In-place text replacement</li>
+                <li>📚 Optimization history tracking</li>
+                <li>🌙 Dark & Light themes</li>
+                <li>⌨️ Customizable keyboard shortcuts</li>
+                <li>🔒 Privacy-focused (local storage only)</li>
+              </ul>
+            </div>
+
+            <div class="about-section">
+              <h3 class="about-subtitle">Links</h3>
+              <div class="about-links">
+                <a href="https://github.com/NoCodeNode/UPO" class="btn ghost btn-interactive" target="_blank">
+                  <span class="btn-ico">🐙</span>
+                  View on GitHub
+                </a>
+                <a href="https://github.com/NoCodeNode/UPO/issues" class="btn ghost btn-interactive" target="_blank">
+                  <span class="btn-ico">🐛</span>
+                  Report Issue
+                </a>
+              </div>
+            </div>
+
+            <div class="about-section">
+              <h3 class="about-subtitle">Privacy & Security</h3>
+              <ul class="privacy-list">
+                <li>✅ API keys stored locally in Chrome Sync</li>
+                <li>✅ No data collection or analytics</li>
+                <li>✅ No third-party tracking</li>
+                <li>✅ Only communicates with Google Gemini API</li>
+                <li>✅ Open source - audit the code yourself</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="options.js" type="module"></script>
