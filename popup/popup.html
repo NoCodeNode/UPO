@@ -5,57 +5,141 @@
   <title>UPO — Universal Prompt Optimizer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="../shared/animations.css" />
   <link rel="stylesheet" href="popup.css" />
 </head>
-<body class="ui-bg">
-  <main class="card">
-    <header class="card-head">
-      <div class="logo-wrap" aria-hidden="true">
-        <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo">
+<body class="ui-bg" data-theme="dark">
+  <main class="popup-container scale-in">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="logo-section">
+        <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
           <defs>
             <linearGradient id="g" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
               <stop stop-color="#2563eb"/>
-              <stop offset="1" stop-color="#a855f7"/>
+              <stop offset="1" stop-color="#8b5cf6"/>
             </linearGradient>
           </defs>
           <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#g)"/>
           <path d="M28 9l-6 13h8l-10 17 4-12h-8l12-18z" fill="white" opacity="0.95"/>
         </svg>
+        <div class="logo-text">
+          <h1 class="logo-title">UPO</h1>
+          <p class="logo-subtitle">Prompt Optimizer</p>
+        </div>
       </div>
-      <div class="titles">
-        <h1 class="title">UPO</h1>
-        <p class="subtitle">Universal Prompt Optimizer</p>
-      </div>
+      <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
     </header>
 
-    <section class="about">
-      <h2 class="h2">What is UPO?</h2>
-      <p>UPO refines your rough idea into a clear, structured, high-impact prompt for AI—faster and with better results.</p>
-    </section>
-
-    <section class="actions">
-      <button id="optimizeNow" class="btn primary">
-        <span class="btn-ico" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        Optimize selected text
+    <!-- Tabs -->
+    <nav class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="optimize">
+        <span class="tab-icon">⚡</span>
+        <span class="tab-label">Optimize</span>
       </button>
-      <button id="openOptions" class="btn ghost">
-        <span class="btn-ico" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="currentColor" stroke-width="2"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V22a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.04 4.3l.06.06c.47.47 1.14.62 1.82.33A1.65 1.65 0 0 0 9.43 3.2V3a2 2 0 1 1 4 0v.09c0 .67.39 1.28 1 1.51.68.29 1.35.14 1.82-.33l.06-.06A2 2 0 1 1 21.16 6.6l-.06.06c-.47.47-.62 1.14-.33 1.82.23.61.84 1 1.51 1.01H22a2 2 0 1 1 0 4h-.09c-.67 0-1.28.39-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        Go to Settings
+      <button class="tab" role="tab" aria-selected="false" data-tab="history">
+        <span class="tab-icon">📚</span>
+        <span class="tab-label">History</span>
       </button>
-    </section>
+      <button class="tab" role="tab" aria-selected="false" data-tab="settings">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Settings</span>
+      </button>
+    </nav>
 
-    <footer class="foot">
-      <div class="small muted">
-        Built by Arnab Mandal (hello@arnabmandal.com)
+    <!-- Tab Content: Optimize -->
+    <div class="tab-content active stagger-children" id="tab-optimize">
+      <section class="mode-selector">
+        <h2 class="section-title">Select Optimization Mode</h2>
+        <div class="mode-cards">
+          <button class="mode-card active" data-mode="precise" title="Clarifies intent, adds specific details">
+            <span class="mode-icon">🎯</span>
+            <span class="mode-name">Precise</span>
+            <span class="mode-badge">Default</span>
+          </button>
+          <button class="mode-card" data-mode="quick" title="Minimal changes, faster processing">
+            <span class="mode-icon">⚡</span>
+            <span class="mode-name">Quick</span>
+          </button>
+          <button class="mode-card" data-mode="detailed" title="Expands with context and examples">
+            <span class="mode-icon">📝</span>
+            <span class="mode-name">Detailed</span>
+          </button>
+          <button class="mode-card" data-mode="creative" title="Optimizes for storytelling">
+            <span class="mode-icon">🎨</span>
+            <span class="mode-name">Creative</span>
+          </button>
+          <button class="mode-card" data-mode="professional" title="Formal tone for business">
+            <span class="mode-icon">💼</span>
+            <span class="mode-name">Professional</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="actions-section">
+        <button id="optimizeNow" class="btn primary btn-interactive ripple">
+          <span class="btn-ico">⚡</span>
+          Optimize Selected Text
+        </button>
+        <p class="help-text">Select text on any page, then click above or press <kbd>Ctrl+Q</kbd></p>
+      </section>
+    </div>
+
+    <!-- Tab Content: History -->
+    <div class="tab-content" id="tab-history">
+      <div class="history-header">
+        <h2 class="section-title">Recent Optimizations</h2>
+        <button id="clearHistory" class="btn ghost small-btn">Clear All</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <div class="empty-state">
+          <span class="empty-icon">📚</span>
+          <p>No history yet</p>
+          <p class="empty-hint">Optimize some text to see it here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Content: Settings -->
+    <div class="tab-content" id="tab-settings">
+      <section class="settings-quick">
+        <button id="openFullSettings" class="btn primary btn-interactive">
+          <span class="btn-ico">⚙️</span>
+          Open Full Settings
+        </button>
+        <button id="openShortcuts" class="btn ghost btn-interactive">
+          <span class="btn-ico">⌨️</span>
+          Keyboard Shortcuts
+        </button>
+        <button id="openApiKeys" class="btn ghost btn-interactive">
+          <span class="btn-ico">🔑</span>
+          Get API Key
+        </button>
+      </section>
+      
+      <div class="stats-section" id="statsSection">
+        <h3 class="section-title small">Usage Stats</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value" id="statTotal">0</span>
+            <span class="stat-label">Optimizations</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="statLibrary">0</span>
+            <span class="stat-label">Saved</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <div class="footer-text">
+        v2.0.0 • Made by <a href="mailto:hello@arnabmandal.com" class="footer-link">Arnab Mandal</a>
       </div>
     </footer>
   </main>
