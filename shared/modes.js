@@ -86,15 +86,13 @@ function getModeSystemPrompt(basePrompt, modeId) {
   return `${basePrompt}\n\n<MODE_SPECIFIC_INSTRUCTION>\n${mode.systemPromptModifier}\n</MODE_SPECIFIC_INSTRUCTION>`;
 }
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    OPTIMIZATION_MODES,
-    DEFAULT_MODE_ID,
-    getModeById,
-    getAllModes,
-    saveLastMode,
-    getLastMode,
-    getModeSystemPrompt
-  };
-}
+// Export for ES6 module usage
+export {
+  OPTIMIZATION_MODES,
+  DEFAULT_MODE_ID,
+  getModeById,
+  getAllModes,
+  saveLastMode,
+  getLastMode,
+  getModeSystemPrompt
+};

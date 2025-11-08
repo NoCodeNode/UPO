@@ -86,7 +86,5 @@ class ThemeManager {
   }
 }
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ThemeManager, THEMES };
-}
+// Export for ES6 module usage
+export { ThemeManager, THEMES };

@@ -240,23 +240,21 @@ async function getUsageStats() {
   };
 }
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    addToHistory,
-    getHistory,
-    getHistoryItem,
-    deleteHistoryItem,
-    clearHistory,
-    searchHistory,
-    getLibrary,
-    addToLibrary,
-    updateLibraryItem,
-    incrementLibraryUsage,
-    deleteLibraryItem,
-    searchLibrary,
-    exportLibrary,
-    importLibrary,
-    getUsageStats
-  };
-}
+// Export for ES6 module usage
+export {
+  addToHistory,
+  getHistory,
+  getHistoryItem,
+  deleteHistoryItem,
+  clearHistory,
+  searchHistory,
+  getLibrary,
+  addToLibrary,
+  updateLibraryItem,
+  incrementLibraryUsage,
+  deleteLibraryItem,
+  searchLibrary,
+  exportLibrary,
+  importLibrary,
+  getUsageStats
+};

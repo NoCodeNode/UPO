@@ -176,12 +176,10 @@ function formatScore(scoreData) {
   };
 }
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    calculateQualityScore,
-    getScoreColor,
-    getScoreLabel,
-    formatScore
-  };
-}
+// Export for ES6 module usage
+export {
+  calculateQualityScore,
+  getScoreColor,
+  getScoreLabel,
+  formatScore
+};
