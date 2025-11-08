@@ -1,23 +1,75 @@
 // background.js — MV3 service worker (ES module)
 
-// Create context menu and open welcome screen on install
-chrome.runtime.onInstalled.addListener(async (details) => {
+// Import shared modules (service workers support ES modules)
+import { addToHistory } from './shared/history.js';
+import { getModeById, getLastMode, saveLastMode, getModeSystemPrompt } from './shared/modes.js';
+
+// Create context menu with mode submenus
+async function createContextMenus() {
   try {
+    // Remove all existing menus first
+    await chrome.contextMenus.removeAll();
+    
+    // Main menu item
     chrome.contextMenus.create({
       id: "upo-optimize-selection",
       title: "Optimize Selected Text",
       contexts: ["selection"]
     });
-  } catch (_) {}
+    
+    // Mode submenu
+    chrome.contextMenus.create({
+      id: "upo-mode-precise",
+      parentId: "upo-optimize-selection",
+      title: "🎯 Precise Mode",
+      contexts: ["selection"]
+    });
+    
+    chrome.contextMenus.create({
+      id: "upo-mode-quick",
+      parentId: "upo-optimize-selection",
+      title: "⚡ Quick Mode",
+      contexts: ["selection"]
+    });
+    
+    chrome.contextMenus.create({
+      id: "upo-mode-detailed",
+      parentId: "upo-optimize-selection",
+      title: "📝 Detailed Mode",
+      contexts: ["selection"]
+    });
+    
+    chrome.contextMenus.create({
+      id: "upo-mode-creative",
+      parentId: "upo-optimize-selection",
+      title: "🎨 Creative Mode",
+      contexts: ["selection"]
+    });
+    
+    chrome.contextMenus.create({
+      id: "upo-mode-professional",
+      parentId: "upo-optimize-selection",
+      title: "💼 Professional Mode",
+      contexts: ["selection"]
+    });
+  } catch (err) {
+    console.error('Error creating context menus:', err);
+  }
+}
+
+// Create context menu and open welcome screen on install
+chrome.runtime.onInstalled.addListener(async (details) => {
+  await createContextMenus();
 
   if (details.reason === "install") {
     // Initialize defaults if not present
-    const existing = await chrome.storage.sync.get(["geminiModel", "geminiPrompt", "onboarded"]);
+    const existing = await chrome.storage.sync.get(["geminiModel", "geminiPrompt", "onboarded", "upoTheme"]);
     if (!existing.geminiModel) {
       await chrome.storage.sync.set({
         geminiModel: "gemini-2.5-pro",
         geminiPrompt: "",
-        onboarded: false
+        onboarded: false,
+        upoTheme: "auto"
       });
     }
     // Open welcome
@@ -25,10 +77,26 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-// Context menu trigger
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "upo-optimize-selection" && tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "UPO_OPTIMIZE_SELECTION" });
+// Context menu trigger with mode selection
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (!tab?.id) return;
+  
+  // Extract mode from menu item ID
+  let mode = null;
+  if (info.menuItemId.startsWith("upo-mode-")) {
+    mode = info.menuItemId.replace("upo-mode-", "");
+  }
+  
+  if (info.menuItemId === "upo-optimize-selection" || mode) {
+    // If no specific mode, use last mode or default
+    if (!mode) {
+      mode = await getLastMode();
+    }
+    
+    chrome.tabs.sendMessage(tab.id, { 
+      type: "UPO_OPTIMIZE_SELECTION",
+      mode: mode 
+    });
   }
 });
 
@@ -36,7 +104,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "optimize-selection") {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: "UPO_OPTIMIZE_SELECTION" });
+    if (tab?.id) {
+      // Use last selected mode
+      const mode = await getLastMode();
+      chrome.tabs.sendMessage(tab.id, { 
+        type: "UPO_OPTIMIZE_SELECTION",
+        mode: mode 
+      });
+    }
   }
 });
 
@@ -45,8 +120,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "UPO_CALL_GEMINI") {
     (async () => {
       try {
-        const optimized = await callGemini(msg.text);
-        sendResponse({ ok: true, optimized });
+        const mode = msg.mode || 'precise';
+        const optimized = await callGemini(msg.text, mode);
+        
+        // Save to history
+        await addToHistory(msg.text, optimized, mode);
+        
+        // Save last used mode
+        await saveLastMode(mode);
+        
+        sendResponse({ ok: true, optimized, mode });
       } catch (err) {
         sendResponse({ ok: false, error: err?.message || String(err) });
       }
@@ -58,7 +141,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       try {
         const testText = "Improve: write a friendly email asking for Friday off.";
-        const optimized = await callGemini(testText);
+        const mode = msg.mode || 'precise';
+        const optimized = await callGemini(testText, mode);
         sendResponse({ ok: true, sample: optimized });
       } catch (err) {
         sendResponse({ ok: false, error: err?.message || String(err) });
@@ -74,10 +158,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "UPO_OPEN_API_KEYS") {
     chrome.tabs.create({ url: "https://aistudio.google.com/app/api-keys" });
   }
+  
+  if (msg?.type === "UPO_GET_LAST_MODE") {
+    (async () => {
+      const mode = await getLastMode();
+      sendResponse({ mode });
+    })();
+    return true;
+  }
 });
 
-// Core: call Gemini API
-async function callGemini(userText) {
+// Core: call Gemini API with mode support
+async function callGemini(userText, mode = 'precise') {
   const {
     geminiApiKey = "",
     geminiModel = "gemini-2.5-pro",
@@ -208,9 +300,13 @@ async function callGemini(userText) {
   </EXEMPLARS>
   `;
 
-  const systemInstruction = (geminiPrompt && geminiPrompt.trim().length > 0)
-  ? geminiPrompt
-  : systemPromptDefault;
+  // Apply mode-specific modification
+  const modeConfig = getModeById(mode);
+  const basePrompt = (geminiPrompt && geminiPrompt.trim().length > 0) 
+    ? geminiPrompt 
+    : systemPromptDefault;
+  
+  const systemInstruction = getModeSystemPrompt(basePrompt, mode);
 
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     geminiModel

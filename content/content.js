@@ -1,6 +1,6 @@
 // content/content.js — selection capture, UX overlay, and in-place replacement
 
-let upoToast, upoBar;
+let upoToast, upoBar, currentOptimization = null;
 
 function ensureUI() {
   if (!upoToast) {
@@ -21,10 +21,10 @@ function setCursorLoading(on) {
   try { document.documentElement.style.cursor = on ? "progress" : ""; } catch {}
 }
 
-function toast(msg, ms = 2200) {
+function toast(msg, ms = 2200, type = 'info') {
   ensureUI();
   upoToast.textContent = msg;
-  upoToast.classList.add("show");
+  upoToast.className = `upo-root-toast show ${type}`;
   clearTimeout(toast._t);
   toast._t = setTimeout(() => upoToast.classList.remove("show"), ms);
 }
@@ -52,21 +52,38 @@ function getSelectionData() {
   return { sel, range, text };
 }
 
-async function optimizeNow() {
+async function optimizeNow(mode = null) {
   const s = getSelectionData();
   if (!s) {
-    toast("Select text to optimize.");
+    toast("Select text to optimize.", 2000, 'warning');
     return;
+  }
+
+  // If no mode specified, get last used mode
+  if (!mode) {
+    const response = await chrome.runtime.sendMessage({ type: "UPO_GET_LAST_MODE" });
+    mode = response?.mode || 'precise';
   }
 
   setCursorLoading(true);
   statusStart();
-  toast("Optimizing text…");
+  
+  // Show mode-specific message
+  const modeNames = {
+    'precise': '🎯 Precise',
+    'quick': '⚡ Quick',
+    'detailed': '📝 Detailed',
+    'creative': '🎨 Creative',
+    'professional': '💼 Professional'
+  };
+  const modeName = modeNames[mode] || '🎯 Precise';
+  toast(`Optimizing with ${modeName} mode…`, 10000);
 
   try {
     const resp = await chrome.runtime.sendMessage({
       type: "UPO_CALL_GEMINI",
-      text: s.text
+      text: s.text,
+      mode: mode
     });
 
     if (!resp?.ok) {
@@ -74,6 +91,17 @@ async function optimizeNow() {
     }
 
     const optimized = resp.optimized.trim();
+    const originalText = s.text;
+    const originalRange = s.range.cloneRange();
+    
+    // Store for potential undo
+    currentOptimization = {
+      original: originalText,
+      optimized: optimized,
+      range: originalRange,
+      timestamp: Date.now()
+    };
+    
     const tn = document.createTextNode(optimized);
 
     // Replace selected range
@@ -88,10 +116,26 @@ async function optimizeNow() {
     s.sel.addRange(after);
 
     statusDone();
-    toast("Prompt optimization complete.", 1500);
+    
+    // Show character count change
+    const charDiff = optimized.length - originalText.length;
+    const diffText = charDiff > 0 ? `+${charDiff}` : `${charDiff}`;
+    toast(`✓ Optimized! ${diffText} characters`, 2500, 'success');
+    
   } catch (e) {
     statusDone();
-    toast(`Error: ${e.message}`, 2600);
+    
+    // Better error messages
+    let errorMsg = e.message;
+    if (errorMsg.includes("API key")) {
+      errorMsg = "⚠️ API Key Missing - Click to open settings";
+      toast(errorMsg, 3500, 'error');
+    } else if (errorMsg.includes("quota") || errorMsg.includes("429")) {
+      errorMsg = "⚠️ API Quota Exceeded - Try again later";
+      toast(errorMsg, 3500, 'error');
+    } else {
+      toast(`Error: ${errorMsg}`, 3000, 'error');
+    }
   } finally {
     setCursorLoading(false);
   }
@@ -100,6 +144,6 @@ async function optimizeNow() {
 // Listen for triggers from background/popup
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === "UPO_OPTIMIZE_SELECTION") {
-    optimizeNow();
+    optimizeNow(msg.mode);
   }
 });
