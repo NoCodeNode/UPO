@@ -1,0 +1,55 @@
+/* Overlay + toast + subtle animations for premium feel */
+
+.upo-root-toast {
+  position: fixed;
+  z-index: 2147483647;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  background: #0b1220;
+  color: #e6eefc;
+  border: 1px solid rgba(120, 144, 180, 0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: 13px/1.35 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03);
+  display: none;
+  pointer-events: none;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(6px);
+}
+
+.upo-root-toast.show {
+  display: block;
+  animation: upo-fade-in 180ms ease-out;
+}
+
+@keyframes upo-fade-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Full-width top status bar */
+.upo-status-bar {
+  position: fixed;
+  z-index: 2147483646;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #2563eb, #22c55e, #a855f7);
+  background-size: 200% 100%;
+  animation: upo-bar-flow 1.2s linear infinite;
+  display: none;
+}
+
+.upo-status-bar.show { display: block; }
+.upo-status-bar.done {
+  background: #22c55e;
+  animation: none;
+}
+
+@keyframes upo-bar-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
