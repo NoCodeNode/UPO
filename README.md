@@ -86,7 +86,7 @@ Works on ChatGPT, Claude, Copilot, and any website with text input
 
 ```bash
 # Clone the repository
-git clone https://github.com/NoCodeNode/UPO.git
+git clone https://github.com/ArnabXM/UPO.git
 
 # Navigate to the directory
 cd UPO
@@ -319,7 +319,7 @@ If you find UPO helpful, consider:
 
 <div align="center">
 
-### 🌟 Made with ❤️ by [NoCodeNode](https://github.com/ArnabXM)
+### 🌟 Made with ❤️ by [ArnabXM](https://github.com/ArnabXM)
 
 **Stop settling for mediocre AI responses. Start optimizing your prompts today!**
 
