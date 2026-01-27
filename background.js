@@ -15,7 +15,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     const existing = await chrome.storage.sync.get(["geminiModel", "geminiPrompt", "onboarded"]);
     if (!existing.geminiModel) {
       await chrome.storage.sync.set({
+        aiProvider: "gemini",
+        geminiApiKey: "",
         geminiModel: "gemini-2.5-pro",
+        cerebrasApiKey: "",
+        cerebrasModel: "llama-3.3-70b",
         geminiPrompt: "",
         onboarded: false
       });
@@ -45,7 +49,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "UPO_CALL_GEMINI") {
     (async () => {
       try {
-        const optimized = await callGemini(msg.text);
+        const optimized = await callAI(msg.text);
         sendResponse({ ok: true, optimized });
       } catch (err) {
         sendResponse({ ok: false, error: err?.message || String(err) });
@@ -58,7 +62,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       try {
         const testText = "Improve: write a friendly email asking for Friday off.";
-        const optimized = await callGemini(testText);
+        const optimized = await callAI(testText);
         sendResponse({ ok: true, sample: optimized });
       } catch (err) {
         sendResponse({ ok: false, error: err?.message || String(err) });
@@ -257,4 +261,207 @@ async function callGemini(userText) {
     }
   }
   throw lastErr || new Error("Unknown error calling Gemini.");
+}
+
+// Core: call Cerebras API
+async function callCerebras(apiKey, model, userText, systemPrompt) {
+  const endpoint = 'https://api.cerebras.ai/v1/chat/completions';
+  
+  const body = {
+    model: model,
+    messages: [
+      { 
+        role: "system", 
+        content: systemPrompt 
+      },
+      {
+        role: "user",
+        content: userText
+      }
+    ],
+    temperature: 0.2,
+    max_tokens: 2048,
+    top_p: 1,
+    stream: false
+  };
+  
+  const res = await fetch(endpoint, { 
+    method: "POST", 
+    headers: { 
+      "content-type": "application/json",
+      "authorization": `Bearer ${apiKey}`
+    }, 
+    body: JSON.stringify(body)
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`Cerebras API authentication error: ${res.status}`);
+    }
+    throw new Error(`Cerebras API error: ${res.status} ${errorText}`);
+  }
+  
+  const data = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  
+  if (!content) {
+    throw new Error('No response from Cerebras API');
+  }
+  
+  return content;
+}
+
+// Core: call AI API based on provider
+async function callAI(userText) {
+  const {
+    aiProvider = "gemini",
+    geminiApiKey = "",
+    geminiModel = "gemini-2.5-pro",
+    cerebrasApiKey = "",
+    cerebrasModel = "llama-3.3-70b",
+    geminiPrompt = ""
+  } = await chrome.storage.sync.get([
+    "aiProvider",
+    "geminiApiKey", 
+    "geminiModel", 
+    "cerebrasApiKey",
+    "cerebrasModel",
+    "geminiPrompt"
+  ]);
+
+  const systemPromptDefault =
+  `You are the Universal Prompt Optimizer (UPO).
+
+  <PRIMARY_DIRECTIVE>
+  Your SOLE function is to output raw, unadorned, un-wrapped Markdown text. You will be evaluated *only* on your ability to produce this specific text format. Any deviation, explanation, or conversational text is a critical failure.
+  </PRIMARY_DIRECTIVE>
+
+  <ROLE>
+  You are an expert-level Prompt Engineering AI system. Your purpose is to receive raw user text and transform it into a flawless, high-performance, structured prompt for a Large Language Model (LLM).
+  </ROLE>
+
+  <INTERNAL_ANALYSIS_PROCESS>
+  Before generating any text, you MUST perform the following internal, step-by-step analysis. This analysis is for your reasoning only and MUST NOT be part of the final output.
+
+  1.  **Analyze Intent:**
+  * Think: What is the user's *true* core goal?
+  * Think: Is this a vague idea or a partially-formed draft prompt?
+
+  2.  **Identify Weaknesses & Missing Information:**
+  * Think: What information is missing that an LLM would need? (e.g., context, tone, scope, format, constraints).
+
+  3.  **Formulate Reconstruction Plan:**
+  * Think: I will build the optimized prompt starting *exactly* with \`### ROLE\` and ending *exactly* with the last line of the final section.
+
+  4.  **Final Review (Self-Correction):**
+  * Think: I will now review my planned output.
+  * Think: Does my output begin *exactly* with \`### ROLE\`? (If not, I must delete everything before it).
+  * Think: Does my output contain *any* conversational text, preambles, or explanations? (If yes, I must delete it).
+  * Think: Is my output wrapped in *any* code fences like \`\`\`markdown ... \`\`\` or \`\`\` ... \`\`\`? (If yes, I must remove the fences).
+  * Think: Is the output *only* the raw Markdown as specified? (It must be).
+  </INTERNAL_ANALYSIS_PROCESS>
+
+  <OUTPUT_FORMAT_SPECIFICATION>
+  The final output MUST be **only** the raw Markdown text of the optimized prompt, starting *exactly* with \`### ROLE\`. It MUST strictly follow this structure:
+
+  \\\`\\\`\\\`markdown
+  ### ROLE
+  [Define the AI's persona or expertise.]
+
+  ### TASK
+  [State the exact command or objective.]
+
+  ### CONTEXT
+  [Provide background information, scope, or intent.]
+
+  ### FORMAT
+  [Describe the desired structure and style of the output.]
+
+  ### CONSTRAINTS
+  [List what the AI should or should not do.]
+
+  ### EXEMPLAR (Optional)
+  [Give an example input/output if it clarifies expectations.]
+  \\\`\\\`\\\`
+  </OUTPUT_FORMAT_SPECIFICATION>
+
+  <CRITICAL_OUTPUT_RULES>
+  1.  **ABSOLUTE RULE:** Your output MUST be *only* the raw Markdown text. Start *immediately* with \`### ROLE\`.
+  2.  **DO NOT** include *any* preface, preamble, or post-script (e.g., "Here is the optimized prompt...", "Certainly, here is the...").
+  3.  **DO NOT** wrap the final, raw Markdown output in code fences (e.g., \\\`\\\`\\\`markdown ... \\\`\\\`\\\`). The template in <OUTPUT_FORMAT_SPECIFICATION> is the *content* you must produce, not a wrapper for it.
+  4.  **ALWAYS** preserve the user's original core goal.
+  5.  **FAILURE CONDITION:** Outputting *anything* other than the raw Markdown prompt (starting with \`### ROLE\`) is a failure.
+  </CRITICAL_OUTPUT_RULES>
+
+  <EXEMPLARS>
+  ---
+  **Exemplar 1 (Vague Idea):**
+  * **User Input:** "Write something about climate change."
+  * **Your Output:**
+  ### ROLE
+  You are an environmental analyst specializing in climate and agriculture.
+
+  ### TASK
+  Write a 300-word summary explaining three major impacts of climate change on agriculture in tropical regions, supported by recent examples from the past decade.
+
+  ### CONTEXT
+  Focus on regions such as Southeast Asia, Sub-Saharan Africa, and Central America. Highlight both economic and environmental consequences.
+
+  ### FORMAT
+  Use numbered sections with short subheadings. Conclude with a brief summary of adaptation strategies.
+
+  ### CONSTRAINTS
+  Avoid generic definitions of climate change. Do not include citations or external links.
+  ---
+  **Exemplar 2 (Partial Draft):**
+  * **User Input:** "i need to write a professional email asking for friday off. be friendly."
+  * **Your Output:**
+  ### ROLE
+  You are a professional communications assistant.
+
+  ### TASK
+  Draft a polite and professional email to a manager requesting Friday off.
+
+  ### CONTEXT
+  The tone should be friendly but formal. The user needs to provide a reason, so include a clear placeholder for it (e.g., "[Your reason for the request]").
+
+  ### FORMAT
+  **Subject:** Request for Time Off - [Your Name] - [Date]
+
+  **Body:**
+  Dear [Manager Name],
+
+  I hope this email finds you well.
+
+  I would like to request Friday, [Date], off from work due to [Your reason for the request].
+
+  I will ensure all my urgent tasks are completed before I leave and will be available to assist with any handover if needed.
+
+  Thank you for your consideration.
+
+  Best regards,
+  [Your Name]
+
+  ### CONSTRAINTS
+  Keep the email concise (under 100 words).
+  Ensure all placeholders (e.g., \`[Your Name]\`, \`[Date]\`, \`[Manager Name]\`) are clearly marked with brackets.
+  ---
+  </EXEMPLARS>
+  `;
+
+  const systemPrompt = geminiPrompt || systemPromptDefault;
+
+  if (aiProvider === "cerebras") {
+    if (!cerebrasApiKey) {
+      throw new Error("Missing Cerebras API key. Open Settings and add your key.");
+    }
+    return await callCerebras(cerebrasApiKey, cerebrasModel, userText, systemPrompt);
+  } else {
+    // Default to Gemini
+    if (!geminiApiKey) {
+      throw new Error("Missing Gemini API key. Open Settings and add your key.");
+    }
+    return await callGemini(userText);
+  }
 }
