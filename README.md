@@ -4,9 +4,9 @@
 
 ### 🚀 Stop Getting Mediocre AI Responses
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/NoCodeNode/UPO)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ArnabXM/UPO)
 [![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![License](https://img.shields.io/badge/license-Custom-orange.svg)](https://github.com/NoCodeNode/UPO)
+[![License](https://img.shields.io/badge/license-Custom-orange.svg)](https://github.com/ArnabXM/UPO)
 
 **Transform your basic prompts into optimized ones that get better results from any AI tool.**
 
@@ -274,7 +274,7 @@ Contributions are **welcome** and **appreciated**! Here's how you can help:
 **Arnab Mandal**
 
 [![Email](https://img.shields.io/badge/Email-hello%40arnabmandal.com-red?style=flat-square&logo=gmail)](mailto:hello@arnabmandal.com)
-[![GitHub](https://img.shields.io/badge/GitHub-NoCodeNode-181717?style=flat-square&logo=github)](https://github.com/NoCodeNode)
+[![GitHub](https://img.shields.io/badge/GitHub-ArnabXM-181717?style=flat-square&logo=github)](https://github.com/ArnabXM)
 
 </div>
 
@@ -311,7 +311,7 @@ This project is currently under custom licensing. Please contact the author for 
 If you find UPO helpful, consider:
 
 - ⭐ Starring this repository
-- 🐛 Reporting bugs via [Issues](https://github.com/NoCodeNode/UPO/issues)
+- 🐛 Reporting bugs via [Issues](https://github.com/ArnabXM/UPO/issues)
 - 💡 Suggesting features
 - 📢 Sharing with others who use AI tools
 
@@ -319,7 +319,7 @@ If you find UPO helpful, consider:
 
 <div align="center">
 
-### 🌟 Made with ❤️ by [NoCodeNode](https://github.com/NoCodeNode)
+### 🌟 Made with ❤️ by [NoCodeNode](https://github.com/ArnabXM)
 
 **Stop settling for mediocre AI responses. Start optimizing your prompts today!**
 
