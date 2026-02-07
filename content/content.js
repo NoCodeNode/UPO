@@ -1,6 +1,6 @@
 // content/content.js — selection capture, UX overlay, and in-place replacement
 
-let upoToast, upoBar;
+let upoToast, upoBar, upoTokenDisplay;
 
 function ensureUI() {
   if (!upoToast) {
@@ -14,6 +14,11 @@ function ensureUI() {
     upoBar = document.createElement("div");
     upoBar.className = "upo-status-bar";
     document.documentElement.appendChild(upoBar);
+  }
+  if (!upoTokenDisplay) {
+    upoTokenDisplay = document.createElement("div");
+    upoTokenDisplay.className = "upo-token-display hidden";
+    document.documentElement.appendChild(upoTokenDisplay);
   }
 }
 
@@ -43,6 +48,41 @@ function statusDone() {
   }, 650);
 }
 
+function showTokenUsage(usage) {
+  if (!usage || typeof usage !== 'object') return;
+  
+  ensureUI();
+  const { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 } = usage;
+  
+  upoTokenDisplay.innerHTML = `
+    <div class="token-label">Token Usage</div>
+    <div class="token-stats">
+      <span class="token-stat">
+        <span class="token-key">Prompt:</span>
+        <span class="token-value">${prompt_tokens}</span>
+      </span>
+      <span class="token-stat">
+        <span class="token-key">Response:</span>
+        <span class="token-value">${completion_tokens}</span>
+      </span>
+      <span class="token-stat">
+        <span class="token-key">Total:</span>
+        <span class="token-value token-total">${total_tokens}</span>
+      </span>
+    </div>
+  `;
+  
+  upoTokenDisplay.classList.remove("hidden");
+  upoTokenDisplay.classList.add("show");
+  
+  // Hide after 5 seconds
+  clearTimeout(showTokenUsage._t);
+  showTokenUsage._t = setTimeout(() => {
+    upoTokenDisplay.classList.remove("show");
+    setTimeout(() => upoTokenDisplay.classList.add("hidden"), 300);
+  }, 5000);
+}
+
 function getSelectionData() {
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return null;
@@ -59,13 +99,19 @@ async function optimizeNow() {
     return;
   }
 
+  // Get current provider from storage
+  const { provider = "gemini" } = await chrome.storage.sync.get("provider");
+
   setCursorLoading(true);
   statusStart();
-  toast("Optimizing text…");
+  toast(`Optimizing with ${provider === 'cerebras' ? 'Cerebras' : 'Gemini'}…`);
 
   try {
+    // Choose API call based on provider
+    const messageType = provider === "cerebras" ? "UPO_CALL_CEREBRAS" : "UPO_CALL_GEMINI";
+    
     const resp = await chrome.runtime.sendMessage({
-      type: "UPO_CALL_GEMINI",
+      type: messageType,
       text: s.text
     });
 
@@ -89,6 +135,11 @@ async function optimizeNow() {
 
     statusDone();
     toast("Prompt optimization complete.", 1500);
+    
+    // Show token usage if available (Cerebras only)
+    if (resp.usage) {
+      showTokenUsage(resp.usage);
+    }
   } catch (e) {
     statusDone();
     toast(`Error: ${e.message}`, 2600);
