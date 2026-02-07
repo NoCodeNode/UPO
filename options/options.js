@@ -116,10 +116,16 @@ async function renderCustomModels() {
 // ===== Load Settings =====
 async function loadSettings() {
   try {
-    // Load provider selection
-    const { selectedProvider = "gemini" } = await chrome.storage.local.get("selectedProvider");
-    provider.value = selectedProvider;
-    showProviderSection(selectedProvider);
+    // Load provider selection (no default - user must choose)
+    const { selectedProvider } = await chrome.storage.local.get("selectedProvider");
+    if (selectedProvider) {
+      provider.value = selectedProvider;
+      showProviderSection(selectedProvider);
+    } else {
+      // Default to gemini in UI for first-time setup
+      provider.value = "gemini";
+      showProviderSection("gemini");
+    }
     
     // Load Gemini settings from sync storage
     const {
@@ -172,8 +178,18 @@ async function loadSettings() {
 // ===== Event Handlers =====
 
 // Provider selector change
-provider.addEventListener("change", (e) => {
-  showProviderSection(e.target.value);
+// Provider change handler
+provider.addEventListener("change", async (e) => {
+  const selectedProvider = e.target.value;
+  showProviderSection(selectedProvider);
+  
+  // Auto-save provider selection
+  try {
+    await chrome.storage.local.set({ selectedProvider });
+    status("Provider changed to " + (selectedProvider === "cerebras" ? "Cerebras" : "Gemini"), true);
+  } catch (err) {
+    console.error("Failed to save provider:", err);
+  }
 });
 
 // Toggle Gemini API key visibility
@@ -234,8 +250,11 @@ form.addEventListener("submit", async (e) => {
     const selectedProvider = provider.value;
     const sp = systemPrompt.value;
     
-    // Save provider selection
+    // ALWAYS save provider selection first (even if API key validation fails)
     await chrome.storage.local.set({ selectedProvider });
+    
+    // Save system prompt to sync storage
+    await chrome.storage.sync.set({ geminiPrompt: sp });
     
     if (selectedProvider === "gemini") {
       // Save Gemini settings to sync storage
@@ -243,15 +262,16 @@ form.addEventListener("submit", async (e) => {
       const mdl = geminiModel.value;
       
       if (!key) {
-        status("Please add your Gemini API key.", false);
+        status("Provider saved. Please add your Gemini API key to use the extension.", false);
         return;
       }
       
       await chrome.storage.sync.set({
         geminiApiKey: key,
-        geminiModel: mdl,
-        geminiPrompt: sp
+        geminiModel: mdl
       });
+      
+      status("Settings saved successfully.");
     } else if (selectedProvider === "cerebras") {
       // Save Cerebras settings to local storage with obfuscation
       const key = cerebrasApiKey.value.trim();
@@ -262,7 +282,7 @@ form.addEventListener("submit", async (e) => {
       const stream = streamToggle.checked;
       
       if (!key) {
-        status("Please add your Cerebras API key.", false);
+        status("Provider saved. Please add your Cerebras API key to use the extension.", false);
         return;
       }
       
@@ -278,11 +298,8 @@ form.addEventListener("submit", async (e) => {
         cerebrasStream: stream
       });
       
-      // Also save system prompt to sync for consistency
-      await chrome.storage.sync.set({ geminiPrompt: sp });
+      status("Settings saved successfully.");
     }
-    
-    status("Settings saved.");
   } catch (err) {
     console.error('Failed to save settings:', err);
     status('Failed to save settings.', false);

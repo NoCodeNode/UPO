@@ -7,7 +7,14 @@ const providerName = document.getElementById("providerName");
 // Load and display current provider
 async function loadProviderInfo() {
   try {
-    const { selectedProvider = "gemini" } = await chrome.storage.local.get("selectedProvider");
+    const { selectedProvider } = await chrome.storage.local.get("selectedProvider");
+    
+    if (!selectedProvider) {
+      providerIcon.textContent = "⚙️";
+      providerName.textContent = "Not configured";
+      providerName.style.color = "#fca5a5";
+      return;
+    }
     
     if (selectedProvider === "cerebras") {
       providerIcon.textContent = "🧠";
@@ -20,7 +27,8 @@ async function loadProviderInfo() {
     }
   } catch (err) {
     console.error("Failed to load provider info:", err);
-    providerName.textContent = "Unknown";
+    providerName.textContent = "Error loading";
+    providerName.style.color = "#fca5a5";
   }
 }
 

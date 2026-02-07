@@ -100,7 +100,13 @@ async function optimizeNow() {
   }
 
   // Get current provider from storage (local storage)
-  const { selectedProvider = "gemini" } = await chrome.storage.local.get("selectedProvider");
+  const { selectedProvider } = await chrome.storage.local.get("selectedProvider");
+  
+  // Check if provider is configured
+  if (!selectedProvider) {
+    toast("⚠️ Please select a provider in Settings first.", 3000);
+    return;
+  }
 
   setCursorLoading(true);
   statusStart();
@@ -116,7 +122,12 @@ async function optimizeNow() {
     });
 
     if (!resp?.ok) {
-      throw new Error(resp?.error || "Unknown error");
+      // Enhanced error message with guidance
+      const errorMsg = resp?.error || "Unknown error";
+      if (errorMsg.includes("API key")) {
+        throw new Error(`${errorMsg}\n\nPlease add your ${selectedProvider === 'cerebras' ? 'Cerebras' : 'Gemini'} API key in Settings.`);
+      }
+      throw new Error(errorMsg);
     }
 
     const optimized = resp.optimized.trim();

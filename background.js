@@ -16,12 +16,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === "install") {
     // Initialize defaults if not present
-    const existing = await chrome.storage.local.get(["geminiModel", "geminiPrompt", "onboarded", "selectedProvider"]);
-    if (!existing.selectedProvider) {
-      await chrome.storage.local.set({
-        selectedProvider: "gemini" // Default provider
-      });
-    }
+    // DO NOT set a default provider - let user choose in settings
+    const existing = await chrome.storage.local.get(["selectedProvider"]);
+    // Only initialize if completely missing (not on first install)
+    
     // Initialize Gemini defaults in sync storage
     const geminiData = await chrome.storage.sync.get(["geminiModel", "geminiPrompt"]);
     if (!geminiData.geminiModel) {
@@ -43,6 +41,15 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (!cerebrasData.cerebrasModel) {
       await chrome.storage.local.set({
         cerebrasModel: "zai-glm-4.7",
+        cerebrasTemperature: 0.7,
+        cerebrasTopP: 0.9,
+        cerebrasStream: true,
+        cerebrasMaxTokens: 65000
+      });
+    }
+    // Open welcome
+    chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html") });
+  }
         cerebrasTemperature: 0.7,
         cerebrasTopP: 0.9,
         cerebrasStream: true,
