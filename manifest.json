@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "UPO - Universal Prompt Optimizer",
   "description": "Optimize prompts with Cerebras AI. Select text and press Ctrl+Q.",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "permissions": [
     "storage",
     "activeTab",
