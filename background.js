@@ -4,6 +4,14 @@ import { sendChatCompletion, sendChatCompletionStream, testConnection } from './
 import { obfuscateKey, deobfuscateKey } from './shared/crypto.js';
 import { getModelInfo, getAllCerebrasModels } from './shared/models.js';
 
+// Enable debug logging
+const DEBUG = true;
+function debugLog(...args) {
+  if (DEBUG) console.log('[UPO Background]', ...args);
+}
+
+debugLog('Background script loaded');
+
 // Create context menu and open welcome screen on install
 chrome.runtime.onInstalled.addListener(async (details) => {
   try {
@@ -70,21 +78,28 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // Keyboard command trigger
 chrome.commands.onCommand.addListener(async (command) => {
+  debugLog('Command received:', command);
   if (command === "optimize-selection") {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    debugLog('Sending message to tab:', tab?.id);
     if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: "UPO_OPTIMIZE_SELECTION" });
   }
 });
 
 // Message router for API calls and utility actions
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  debugLog('Message received:', msg?.type);
+  
   // Cerebras API call (non-streaming)
   if (msg?.type === "UPO_CALL_CEREBRAS") {
+    debugLog('Handling Cerebras API call');
     (async () => {
       try {
         const result = await callCerebras(msg.text);
+        debugLog('Cerebras call successful');
         sendResponse({ ok: true, optimized: result.text, usage: result.usage, model: result.model });
       } catch (err) {
+        debugLog('Cerebras call failed:', err.message);
         sendResponse({ ok: false, error: err?.message || String(err), status: err?.status });
       }
     })();
@@ -362,6 +377,8 @@ async function callGemini(userText) {
 
 // Core: call Cerebras API (non-streaming)
 async function callCerebras(userText) {
+  debugLog('callCerebras() called with text length:', userText.length);
+  
   const {
     cerebrasApiKey = "",
     cerebrasModel = "zai-glm-4.7",
@@ -373,12 +390,23 @@ async function callCerebras(userText) {
     "cerebrasTopP", "cerebrasMaxTokens"
   ]);
   
+  debugLog('Cerebras config:', { 
+    hasKey: !!cerebrasApiKey, 
+    model: cerebrasModel,
+    temp: cerebrasTemperature,
+    topP: cerebrasTopP,
+    maxTokens: cerebrasMaxTokens
+  });
+  
   // Get system prompt from sync storage (same as Gemini for now)
   const { geminiPrompt: systemPrompt = "" } = await chrome.storage.sync.get("geminiPrompt");
 
   if (!cerebrasApiKey) {
+    debugLog('ERROR: No API key found');
     throw new Error("Missing Cerebras API key. Open Settings and add your key.");
   }
+  
+  debugLog('API key found, proceeding with call...');
 
   // Use default UPO system prompt (same as Gemini)
   const systemPromptDefault = `You are the Universal Prompt Optimizer (UPO).

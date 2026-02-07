@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UPO Extension Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2563eb;
+    }
+    .test-area {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f9fafb;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 15px;
+      font-size: 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+    .instructions {
+      background: #dbeafe;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #1e40af;
+    }
+    .status {
+      margin: 15px 0;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status.info {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    .config-section {
+      background: #f3f4f6;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+    code {
+      background: #1f2937;
+      color: #10b981;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 UPO Extension Test Page</h1>
+    
+    <div class="instructions">
+      <h3>📋 Setup Instructions:</h3>
+      <ol>
+        <li>Make sure the UPO extension is loaded in Chrome</li>
+        <li>Click "Configure Extension" button below to set up Cerebras</li>
+        <li>Type or paste text in the text area below</li>
+        <li>Select the text you want to optimize</li>
+        <li>Press <code>Ctrl+Q</code> (or use the button)</li>
+        <li>Watch your text get optimized!</li>
+      </ol>
+    </div>
+
+    <div class="config-section">
+      <h3>⚙️ Quick Configuration</h3>
+      <p>Your Cerebras API Key:</p>
+      <input type="text" id="apiKeyInput" value="csk-2d3xhh8rnn9ekc5pekmwwfm3fev5w4wwncpmd422dj6c53wt" readonly>
+      <br><br>
+      <button onclick="configureExtension()">🔧 Configure Extension (Auto-setup)</button>
+      <button onclick="checkConfig()">✓ Check Configuration</button>
+      <div id="configStatus"></div>
+    </div>
+
+    <div class="test-area">
+      <h3>📝 Test Text Area</h3>
+      <p>Type or paste text below, then select it and press Ctrl+Q:</p>
+      <textarea id="testText" placeholder="Example: write a friendly email asking for Friday off">write a professional email to my manager requesting time off next Friday for a family event</textarea>
+      <br><br>
+      <button onclick="testOptimize()">🚀 Optimize Selected Text (Same as Ctrl+Q)</button>
+      <div id="testStatus"></div>
+    </div>
+
+    <div class="status info" id="globalStatus">
+      <strong>Status:</strong> Ready to test. Configure the extension first.
+    </div>
+
+  </div>
+
+  <script>
+    const apiKey = "csk-2d3xhh8rnn9ekc5pekmwwfm3fev5w4wwncpmd422dj6c53wt";
+
+    // Auto-configure extension on page load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        showStatus('info', 'Click "Configure Extension" to automatically set up Cerebras with your API key.');
+      }, 500);
+    });
+
+    async function configureExtension() {
+      showConfigStatus('info', '⏳ Configuring extension...');
+      
+      try {
+        // Import obfuscateKey from extension
+        const { obfuscateKey } = await import(chrome.runtime.getURL('shared/crypto.js'));
+        
+        // Obfuscate the API key
+        const obfuscatedKey = obfuscateKey(apiKey);
+        
+        // Set provider
+        await chrome.storage.local.set({ selectedProvider: 'cerebras' });
+        
+        // Set Cerebras configuration
+        await chrome.storage.local.set({
+          cerebrasApiKey: obfuscatedKey,
+          cerebrasModel: 'zai-glm-4.7',
+          cerebrasTemperature: 0.7,
+          cerebrasTopP: 0.9,
+          cerebrasMaxTokens: 65000,
+          cerebrasStream: false // Use non-streaming for simpler testing
+        });
+        
+        showConfigStatus('success', '✅ Extension configured successfully! Provider: Cerebras, Model: zai-glm-4.7');
+        showStatus('success', 'Extension ready! Select text and press Ctrl+Q to optimize.');
+        
+      } catch (err) {
+        showConfigStatus('error', '❌ Configuration failed: ' + err.message);
+        console.error('Config error:', err);
+      }
+    }
+
+    async function checkConfig() {
+      showConfigStatus('info', '⏳ Checking configuration...');
+      
+      try {
+        const { selectedProvider } = await chrome.storage.local.get('selectedProvider');
+        const { cerebrasApiKey, cerebrasModel } = await chrome.storage.local.get(['cerebrasApiKey', 'cerebrasModel']);
+        
+        if (!selectedProvider) {
+          showConfigStatus('error', '❌ No provider selected. Click "Configure Extension" first.');
+          return;
+        }
+        
+        if (selectedProvider === 'cerebras' && !cerebrasApiKey) {
+          showConfigStatus('error', '❌ Cerebras selected but no API key found. Click "Configure Extension".');
+          return;
+        }
+        
+        showConfigStatus('success', `✅ Configuration OK! Provider: ${selectedProvider}, Model: ${cerebrasModel || 'default'}`);
+        
+      } catch (err) {
+        showConfigStatus('error', '❌ Check failed: ' + err.message);
+      }
+    }
+
+    function testOptimize() {
+      showTestStatus('info', '⏳ Sending optimization request...');
+      
+      const textarea = document.getElementById('testText');
+      const selectedText = textarea.value.substring(textarea.selectionStart, textarea.selectionEnd);
+      
+      if (!selectedText || selectedText.trim() === '') {
+        showTestStatus('error', '❌ No text selected. Select some text in the textarea first.');
+        return;
+      }
+      
+      // Send message to content script
+      chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'UPO_OPTIMIZE_SELECTION' }, (response) => {
+            if (chrome.runtime.lastError) {
+              showTestStatus('error', '❌ Error: ' + chrome.runtime.lastError.message);
+            } else {
+              showTestStatus('success', '✅ Optimization request sent! Check the textarea.');
+            }
+          });
+        }
+      });
+    }
+
+    function showStatus(type, message) {
+      const el = document.getElementById('globalStatus');
+      el.className = 'status ' + type;
+      el.innerHTML = '<strong>Status:</strong> ' + message;
+    }
+
+    function showConfigStatus(type, message) {
+      const el = document.getElementById('configStatus');
+      el.className = 'status ' + type;
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    function showTestStatus(type, message) {
+      const el = document.getElementById('testStatus');
+      el.className = 'status ' + type;
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

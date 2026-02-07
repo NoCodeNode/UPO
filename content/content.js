@@ -1,5 +1,13 @@
 // content/content.js — selection capture, UX overlay, and in-place replacement
 
+// Enable debug logging
+const DEBUG = true;
+function debugLog(...args) {
+  if (DEBUG) console.log('[UPO Content]', ...args);
+}
+
+debugLog('Content script loaded and running');
+
 let upoToast, upoBar, upoTokenDisplay;
 
 function ensureUI() {
@@ -93,17 +101,25 @@ function getSelectionData() {
 }
 
 async function optimizeNow() {
+  debugLog('optimizeNow() called');
+  
   const s = getSelectionData();
   if (!s) {
+    debugLog('No text selected');
     toast("Select text to optimize.");
     return;
   }
+  
+  debugLog('Selected text:', s.text.substring(0, 50) + '...');
 
   // Get current provider from storage (local storage)
+  debugLog('Fetching provider from storage...');
   const { selectedProvider } = await chrome.storage.local.get("selectedProvider");
+  debugLog('Provider:', selectedProvider);
   
   // Check if provider is configured
   if (!selectedProvider) {
+    debugLog('No provider configured!');
     toast("⚠️ Please select a provider in Settings first.", 3000);
     return;
   }
@@ -115,20 +131,26 @@ async function optimizeNow() {
   try {
     // Choose API call based on provider
     const messageType = selectedProvider === "cerebras" ? "UPO_CALL_CEREBRAS" : "UPO_CALL_GEMINI";
+    debugLog('Sending message:', messageType);
     
     const resp = await chrome.runtime.sendMessage({
       type: messageType,
       text: s.text
     });
+    
+    debugLog('Received response:', resp);
 
     if (!resp?.ok) {
       // Enhanced error message with guidance
       const errorMsg = resp?.error || "Unknown error";
+      debugLog('Error from background:', errorMsg);
       if (errorMsg.includes("API key")) {
         throw new Error(`${errorMsg}\n\nPlease add your ${selectedProvider === 'cerebras' ? 'Cerebras' : 'Gemini'} API key in Settings.`);
       }
       throw new Error(errorMsg);
     }
+    
+    debugLog('Optimization successful, replacing text...');
 
     const optimized = resp.optimized.trim();
     const tn = document.createTextNode(optimized);
@@ -146,12 +168,15 @@ async function optimizeNow() {
 
     statusDone();
     toast("Prompt optimization complete.", 1500);
+    debugLog('Text replacement complete');
     
     // Show token usage if available (Cerebras only)
     if (resp.usage) {
+      debugLog('Token usage:', resp.usage);
       showTokenUsage(resp.usage);
     }
   } catch (e) {
+    debugLog('Error during optimization:', e);
     statusDone();
     toast(`Error: ${e.message}`, 2600);
   } finally {
@@ -161,7 +186,9 @@ async function optimizeNow() {
 
 // Listen for triggers from background/popup
 chrome.runtime.onMessage.addListener((msg) => {
+  debugLog('Message received:', msg);
   if (msg?.type === "UPO_OPTIMIZE_SELECTION") {
+    debugLog('Triggering optimization...');
     optimizeNow();
   }
 });
