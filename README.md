@@ -4,11 +4,12 @@
 
 ### 🚀 Stop Getting Mediocre AI Responses
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ArnabXM/UPO)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/ArnabXM/UPO)
 [![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![License](https://img.shields.io/badge/license-Custom-orange.svg)](https://github.com/ArnabXM/UPO)
+[![Providers](https://img.shields.io/badge/providers-Gemini%20%7C%20Cerebras-purple.svg)](https://github.com/ArnabXM/UPO)
 
-**Transform your basic prompts into optimized ones that get better results from any AI tool.**
+**Transform your basic prompts into optimized ones with Google Gemini or Cerebras Cloud AI.**
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Setup](#️-setup) • [Contributing](#-contributing)
 
@@ -28,7 +29,7 @@ Most people struggle to write effective prompts that get the results they want. 
 
 ## 💡 The Solution
 
-**UPO (Universal Prompt Optimizer)** uses Google Gemini AI to instantly transform your basic prompts into optimized versions that get you better results from any AI tool.
+**UPO (Universal Prompt Optimizer)** uses Google Gemini or Cerebras Cloud AI to instantly transform your basic prompts into optimized versions that get you better results from any AI tool.
 
 Simply select your prompt text anywhere on the web, press `Ctrl+Q`, and watch as UPO rewrites it into a clear, effective prompt that AI tools understand better.
 
@@ -37,9 +38,24 @@ Simply select your prompt text anywhere on the web, press `Ctrl+Q`, and watch as
 - ⚡ **Instant Optimization** — Transform prompts in seconds with `Ctrl+Q`
 - 🎯 **Better AI Results** — Get more accurate, relevant responses from any AI tool
 - 🔄 **In-Place Replacement** — Optimized prompt appears right where you typed it
-- 🧠 **Gemini Powered** — Leverages Google's most advanced AI for prompt engineering
-- 🎨 **Works Everywhere** — ChatGPT, Claude, Copilot, or any text field on any website
+- 🧠 **Multi-Provider** — Choose between Google Gemini and Cerebras Cloud
+- 🎨 **Premium UI** — Beautiful skeuomorphic design with microinteractions
+- 🚀 **Ultra-Fast** — Cerebras offers lightning-fast inference speeds
 - 🔒 **Private & Secure** — Your API key stays local, never shared
+
+---
+
+## 🆕 What's New in v3.0.0
+
+- 🧠 **Multi-Provider Support** — Choose between Google Gemini and Cerebras Cloud AI
+- ⚡ **Cerebras Integration** — Ultra-fast inference with competitive pricing
+- 🎨 **Premium Skeuomorphic UI** — Completely redesigned interface with glass morphism and 3D effects
+- 📊 **Token Usage Display** — Track prompt and completion tokens in real-time
+- 🎛️ **Advanced Controls** — Temperature, Top-P, and Max Tokens sliders
+- 🔧 **Custom Models** — Add and manage custom Cerebras models dynamically
+- 🔒 **Enhanced Security** — API key obfuscation with XOR cipher
+- 🌊 **Streaming Support** — Real-time text generation with SSE
+- 🎯 **Provider Badge** — See your active provider at a glance
 
 ---
 
@@ -71,8 +87,8 @@ No copy-paste needed — optimized prompt appears right where you selected it
 </td>
 <td width="50%">
 
-### ⚙️ Universal Compatibility
-Works on ChatGPT, Claude, Copilot, and any website with text input
+### ⚙️ Multi-Provider Support
+Choose between Google Gemini and Cerebras Cloud based on your needs
 
 </td>
 </tr>
@@ -284,7 +300,8 @@ Contributions are **welcome** and **appreciated**! Here's how you can help:
 
 | Version | Release Date | Highlights |
 |---------|--------------|------------|
-| 2.0.0 | Current | Manifest V3, Gemini integration, Modern UI |
+| 3.0.0 | 2026-02 | Cerebras Cloud integration, Multi-provider support, Premium skeuomorphic UI/UX, Token usage display, Advanced controls (temperature, top-p, max tokens), Custom model management, Streaming support, API key obfuscation |
+| 2.0.0 | Previous | Manifest V3, Gemini integration, Modern UI |
 
 ---
 
