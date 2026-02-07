@@ -42,12 +42,13 @@ export const GEMINI_MODELS = {
 
 /**
  * Default configuration for Cerebras API
+ * Values match official Cerebras curl examples
  */
 export const CEREBRAS_DEFAULTS = {
-  temperature: 0.7,
-  topP: 0.9,
+  temperature: 1,      // Official example for zai-glm-4.7
+  topP: 0.95,          // Official example for zai-glm-4.7
   stream: true,
-  timeout: 30000, // 30 seconds
+  timeout: 30000,      // 30 seconds
   maxRetries: 3
 };
 

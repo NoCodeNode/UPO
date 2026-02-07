@@ -30,15 +30,15 @@ async function autoConfigureCerebras() {
     await chrome.storage.local.set({
       cerebrasApiKey: obfuscatedKey,
       cerebrasModel: 'zai-glm-4.7',
-      cerebrasTemperature: 0.7,
-      cerebrasTopP: 0.9,
+      cerebrasTemperature: 1,      // Match official example
+      cerebrasTopP: 0.95,           // Match official example
       cerebrasMaxTokens: 65000,
       cerebrasStream: false // Start with non-streaming for simplicity
     });
     console.log("✓ Cerebras configuration saved:");
     console.log("  - Model: zai-glm-4.7");
-    console.log("  - Temperature: 0.7");
-    console.log("  - Top-P: 0.9");
+    console.log("  - Temperature: 1 (matches Cerebras official example)");
+    console.log("  - Top-P: 0.95 (matches Cerebras official example)");
     console.log("  - Max Tokens: 65000");
     console.log("  - Streaming: disabled");
     

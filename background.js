@@ -49,8 +49,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (!cerebrasData.cerebrasModel) {
       await chrome.storage.local.set({
         cerebrasModel: "zai-glm-4.7",
-        cerebrasTemperature: 0.7,
-        cerebrasTopP: 0.9,
+        cerebrasTemperature: 1,      // Match official Cerebras example
+        cerebrasTopP: 0.95,           // Match official Cerebras example
         cerebrasStream: true,
         cerebrasMaxTokens: 65000
       });
