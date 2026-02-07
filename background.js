@@ -48,43 +48,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Call Cerebras API
 async function callCerebrasAPI(userText) {
-  // Get API key from storage
-  const { cerebrasApiKey } = await chrome.storage.local.get('cerebrasApiKey');
+  // Get settings from storage
+  const settings = await chrome.storage.local.get(['cerebrasApiKey', 'selectedModel', 'temperature', 'maxTokens', 'customSystemPrompt']);
   
-  if (!cerebrasApiKey) {
+  if (!settings.cerebrasApiKey) {
     throw new Error('Please set your Cerebras API key in the extension options');
   }
 
-  const systemPrompt = `You are the Universal Prompt Optimizer (UPO).
+  // Use custom system prompt if provided, otherwise use default
+  const systemPrompt = settings.customSystemPrompt || 'You are the Universal Prompt Optimizer (UPO).';
 
-Your task is to transform user input into an optimized, structured prompt for Large Language Models.
-
-Rules:
-1. Output ONLY the optimized prompt - no explanations, no meta-commentary
-2. Structure the prompt with clear sections (e.g., ROLE, TASK, CONTEXT, FORMAT)
-3. Make it detailed, specific, and actionable
-4. Use markdown formatting for clarity
-5. Do NOT wrap the output in code blocks or add any prefixes/suffixes
-
-Transform the user's input into a professional, well-structured prompt.`;
+  // Use selected model or default to llama3.1-8b
+  const model = settings.selectedModel || 'llama3.1-8b';
+  const temperature = settings.temperature !== undefined ? settings.temperature : 0.7;
+  const maxTokens = settings.maxTokens || 2000;
 
   const payload = {
-    model: 'llama3.1-8b',
+    model: model,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userText }
     ],
-    temperature: 0.7,
-    max_tokens: 2000
+    temperature: temperature,
+    max_tokens: maxTokens
   };
 
-  console.log('[UPO] Sending request to Cerebras API');
+  console.log('[UPO] Sending request to Cerebras API with model:', model);
   
   const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${cerebrasApiKey}`
+      'Authorization': `Bearer ${settings.cerebrasApiKey}`
     },
     body: JSON.stringify(payload)
   });

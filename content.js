@@ -16,17 +16,18 @@ function optimizeSelection() {
   const selectedText = selection.toString().trim();
   
   if (!selectedText) {
-    showToast('Please select some text first');
+    showToast('⚠ Please select some text first');
     return;
   }
   
-  console.log('[UPO] Selected text:', selectedText.substring(0, 50) + '...');
+  const charCount = selectedText.length;
+  console.log('[UPO] Selected text:', selectedText.substring(0, 50) + '...', `(${charCount} chars)`);
   
   // Get the range for replacement
   const range = selection.getRangeAt(0);
   
-  // Show loading state
-  showToast('Optimizing with Cerebras AI...', 0);
+  // Show loading state with character count
+  showToast(`⏳ Optimizing ${charCount} characters with AI...`, 0);
   
   // Call background script to make API call
   chrome.runtime.sendMessage(
@@ -34,6 +35,11 @@ function optimizeSelection() {
     (response) => {
       if (response.success) {
         console.log('[UPO] Optimization successful');
+        
+        const optimizedLength = response.result.length;
+        const improvement = optimizedLength > charCount ? 
+          `+${optimizedLength - charCount}` : 
+          `${optimizedLength - charCount}`;
         
         // Replace the selected text
         range.deleteContents();
@@ -46,10 +52,10 @@ function optimizeSelection() {
         selection.removeAllRanges();
         selection.addRange(range);
         
-        showToast('✓ Prompt optimized!', 2000);
+        showToast(`✓ Optimized! ${charCount} → ${optimizedLength} chars (${improvement})`, 3000);
       } else {
         console.error('[UPO] Optimization failed:', response.error);
-        showToast('Error: ' + response.error, 4000);
+        showToast('❌ Error: ' + response.error, 5000);
       }
     }
   );

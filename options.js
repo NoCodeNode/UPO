@@ -1,14 +1,37 @@
 // options.js - Handle settings
 document.addEventListener('DOMContentLoaded', () => {
   const apiKeyInput = document.getElementById('apiKey');
+  const modelSelect = document.getElementById('modelSelect');
+  const temperatureInput = document.getElementById('temperature');
+  const tempValue = document.getElementById('tempValue');
+  const maxTokensInput = document.getElementById('maxTokens');
+  const systemPromptInput = document.getElementById('systemPrompt');
   const saveBtn = document.getElementById('saveBtn');
   const testBtn = document.getElementById('testBtn');
   const status = document.getElementById('status');
 
-  // Load saved API key
-  chrome.storage.local.get('cerebrasApiKey', (data) => {
+  // Update temperature display
+  temperatureInput.addEventListener('input', () => {
+    tempValue.textContent = temperatureInput.value;
+  });
+
+  // Load saved settings
+  chrome.storage.local.get(['cerebrasApiKey', 'selectedModel', 'temperature', 'maxTokens', 'customSystemPrompt'], (data) => {
     if (data.cerebrasApiKey) {
       apiKeyInput.value = data.cerebrasApiKey;
+    }
+    if (data.selectedModel) {
+      modelSelect.value = data.selectedModel;
+    }
+    if (data.temperature !== undefined) {
+      temperatureInput.value = data.temperature;
+      tempValue.textContent = data.temperature;
+    }
+    if (data.maxTokens) {
+      maxTokensInput.value = data.maxTokens;
+    }
+    if (data.customSystemPrompt) {
+      systemPromptInput.value = data.customSystemPrompt;
     }
   });
 
@@ -26,7 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    chrome.storage.local.set({ cerebrasApiKey: apiKey }, () => {
+    const settings = {
+      cerebrasApiKey: apiKey,
+      selectedModel: modelSelect.value,
+      temperature: parseFloat(temperatureInput.value),
+      maxTokens: parseInt(maxTokensInput.value),
+      customSystemPrompt: systemPromptInput.value.trim() || null
+    };
+    
+    chrome.storage.local.set(settings, () => {
       showStatus('✓ Settings saved successfully!', 'success');
     });
   });
@@ -34,13 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Test connection
   testBtn.addEventListener('click', async () => {
     const apiKey = apiKeyInput.value.trim();
+    const model = modelSelect.value;
     
     if (!apiKey) {
       showStatus('Please enter an API key first', 'error');
       return;
     }
     
-    showStatus('Testing connection...', 'info');
+    showStatus(`Testing connection with ${model}...`, 'info');
     testBtn.disabled = true;
     
     try {
@@ -51,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'llama3.1-8b',
+          model: model,
           messages: [
             { role: 'user', content: 'Say "Connection successful!" if you can read this.' }
           ],
@@ -61,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         const data = await response.json();
-        showStatus('✓ Connection successful! API is working.', 'success');
+        showStatus(`✓ Connection successful with ${model}! API is working.`, 'success');
       } else {
         const errorText = await response.text();
         showStatus(`Connection failed: ${response.status} ${response.statusText}`, 'error');
