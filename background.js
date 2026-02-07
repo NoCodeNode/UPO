@@ -1,594 +1,106 @@
-// background.js — MV3 service worker (ES module)
+// background.js - Simple Cerebras API integration
+console.log('[UPO] Background script loaded');
 
-import { sendChatCompletion, sendChatCompletionStream, testConnection } from './shared/cerebras-api.js';
-import { obfuscateKey, deobfuscateKey } from './shared/crypto.js';
-import { getModelInfo, getAllCerebrasModels } from './shared/models.js';
-
-// Enable debug logging
-const DEBUG = true;
-function debugLog(...args) {
-  if (DEBUG) console.log('[UPO Background]', ...args);
-}
-
-debugLog('Background script loaded');
-
-// Create context menu and open welcome screen on install
-chrome.runtime.onInstalled.addListener(async (details) => {
-  try {
-    chrome.contextMenus.create({
-      id: "upo-optimize-selection",
-      title: "Optimize Selected Text",
-      contexts: ["selection"]
-    });
-  } catch (_) {}
-
-  if (details.reason === "install") {
-    // Initialize defaults if not present
-    // DO NOT set a default provider - let user choose in settings
-    const existing = await chrome.storage.local.get(["selectedProvider"]);
-    // Only initialize if completely missing (not on first install)
-    
-    // Initialize Gemini defaults in sync storage
-    const geminiData = await chrome.storage.sync.get(["geminiModel", "geminiPrompt"]);
-    if (!geminiData.geminiModel) {
-      await chrome.storage.sync.set({
-        geminiModel: "gemini-2.5-pro",
-        geminiPrompt: ""
-      });
-    }
-    // Initialize onboarded flag in sync
-    const { onboarded } = await chrome.storage.sync.get("onboarded");
-    if (!onboarded) {
-      await chrome.storage.sync.set({ onboarded: false });
-    }
-    // Initialize Cerebras defaults in local storage
-    const cerebrasData = await chrome.storage.local.get([
-      "cerebrasModel", "cerebrasTemperature", "cerebrasTopP", 
-      "cerebrasStream", "cerebrasMaxTokens"
-    ]);
-    if (!cerebrasData.cerebrasModel) {
-      await chrome.storage.local.set({
-        cerebrasModel: "zai-glm-4.7",
-        cerebrasTemperature: 1,      // Match official Cerebras example
-        cerebrasTopP: 0.95,           // Match official Cerebras example
-        cerebrasStream: true,
-        cerebrasMaxTokens: 65000
-      });
-    }
-    // Open welcome
-    chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html") });
-  }
-        cerebrasTemperature: 0.7,
-        cerebrasTopP: 0.9,
-        cerebrasStream: true,
-        cerebrasMaxTokens: 65000
-      });
-    }
-    // Open welcome
-    chrome.tabs.create({ url: chrome.runtime.getURL("welcome/welcome.html") });
-  }
+// Create context menu on install
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'upo-optimize',
+    title: 'Optimize with UPO',
+    contexts: ['selection']
+  });
+  console.log('[UPO] Extension installed, context menu created');
 });
 
-// Context menu trigger
+// Handle context menu clicks
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "upo-optimize-selection" && tab?.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "UPO_OPTIMIZE_SELECTION" });
+  if (info.menuItemId === 'upo-optimize') {
+    chrome.tabs.sendMessage(tab.id, { action: 'optimize' });
   }
 });
 
-// Keyboard command trigger
-chrome.commands.onCommand.addListener(async (command) => {
-  debugLog('Command received:', command);
-  if (command === "optimize-selection") {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    debugLog('Sending message to tab:', tab?.id);
-    if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: "UPO_OPTIMIZE_SELECTION" });
+// Handle keyboard shortcut
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'optimize-text') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'optimize' });
+      }
+    });
   }
 });
 
-// Message router for API calls and utility actions
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  debugLog('Message received:', msg?.type);
+// Handle messages from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'callCerebras') {
+    console.log('[UPO] Calling Cerebras API');
+    callCerebrasAPI(request.text)
+      .then(result => {
+        console.log('[UPO] Cerebras API success');
+        sendResponse({ success: true, result: result });
+      })
+      .catch(error => {
+        console.error('[UPO] Cerebras API error:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // Keep channel open for async response
+  }
+});
+
+// Call Cerebras API
+async function callCerebrasAPI(userText) {
+  // Get API key from storage
+  const { cerebrasApiKey } = await chrome.storage.local.get('cerebrasApiKey');
   
-  // Cerebras API call (non-streaming)
-  if (msg?.type === "UPO_CALL_CEREBRAS") {
-    debugLog('Handling Cerebras API call');
-    (async () => {
-      try {
-        const result = await callCerebras(msg.text);
-        debugLog('Cerebras call successful');
-        sendResponse({ ok: true, optimized: result.text, usage: result.usage, model: result.model });
-      } catch (err) {
-        debugLog('Cerebras call failed:', err.message);
-        sendResponse({ ok: false, error: err?.message || String(err), status: err?.status });
-      }
-    })();
-    return true; // keep channel open
+  if (!cerebrasApiKey) {
+    throw new Error('Please set your Cerebras API key in the extension options');
   }
 
-  // Cerebras API call (streaming) - uses port for continuous updates
-  if (msg?.type === "UPO_CALL_CEREBRAS_STREAM") {
-    (async () => {
-      try {
-        // Note: Streaming is handled via ports, not direct response
-        // This handler acknowledges the request and initiates streaming
-        const port = chrome.runtime.connect({ name: "cerebras-stream" });
-        
-        await callCerebrasStream(msg.text, (chunk) => {
-          port.postMessage({ type: "CHUNK", chunk });
-        }, (usage, model) => {
-          port.postMessage({ type: "DONE", usage, model });
-          port.disconnect();
-        }, (error) => {
-          port.postMessage({ type: "ERROR", error: error.message, status: error.status });
-          port.disconnect();
-        });
-        
-        sendResponse({ ok: true, streaming: true });
-      } catch (err) {
-        sendResponse({ ok: false, error: err?.message || String(err) });
-      }
-    })();
-    return true;
-  }
+  const systemPrompt = `You are the Universal Prompt Optimizer (UPO).
 
-  // Test Cerebras connection
-  if (msg?.type === "UPO_TEST_CEREBRAS") {
-    (async () => {
-      try {
-        const { cerebrasApiKey, cerebrasModel = "zai-glm-4.7" } = 
-          await chrome.storage.local.get(["cerebrasApiKey", "cerebrasModel"]);
-        
-        if (!cerebrasApiKey) {
-          sendResponse({ ok: false, error: "Missing Cerebras API key. Please add it in Settings." });
-          return;
-        }
-        
-        const sample = await testConnection(cerebrasApiKey, cerebrasModel);
-        sendResponse({ ok: true, sample });
-      } catch (err) {
-        sendResponse({ ok: false, error: err?.message || String(err) });
-      }
-    })();
-    return true;
-  }
+Your task is to transform user input into an optimized, structured prompt for Large Language Models.
 
-  // Open Cerebras API keys page
-  if (msg?.type === "UPO_OPEN_CEREBRAS_KEYS") {
-    chrome.tabs.create({ url: "https://cloud.cerebras.ai/api-keys" });
-  }
+Rules:
+1. Output ONLY the optimized prompt - no explanations, no meta-commentary
+2. Structure the prompt with clear sections (e.g., ROLE, TASK, CONTEXT, FORMAT)
+3. Make it detailed, specific, and actionable
+4. Use markdown formatting for clarity
+5. Do NOT wrap the output in code blocks or add any prefixes/suffixes
 
-  if (msg?.type === "UPO_CALL_GEMINI") {
-    (async () => {
-      try {
-        const optimized = await callGemini(msg.text);
-        sendResponse({ ok: true, optimized });
-      } catch (err) {
-        sendResponse({ ok: false, error: err?.message || String(err) });
-      }
-    })();
-    return true; // keep channel open
-  }
-
-  if (msg?.type === "UPO_TEST_GEMINI") {
-    (async () => {
-      try {
-        const testText = "Improve: write a friendly email asking for Friday off.";
-        const optimized = await callGemini(testText);
-        sendResponse({ ok: true, sample: optimized });
-      } catch (err) {
-        sendResponse({ ok: false, error: err?.message || String(err) });
-      }
-    })();
-    return true;
-  }
-
-  if (msg?.type === "UPO_OPEN_SHORTCUTS") {
-    chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
-  }
-
-  if (msg?.type === "UPO_OPEN_API_KEYS") {
-    chrome.tabs.create({ url: "https://aistudio.google.com/app/api-keys" });
-  }
-});
-
-// Core: call Gemini API
-async function callGemini(userText) {
-  const {
-    geminiApiKey = "",
-    geminiModel = "gemini-2.5-pro",
-    geminiPrompt = ""
-  } = await chrome.storage.sync.get(["geminiApiKey", "geminiModel", "geminiPrompt"]);
-
-  if (!geminiApiKey) {
-    throw new Error("Missing Gemini API key. Open Settings and add your key.");
-  }
-
-  const systemPromptDefault =
-  `You are the Universal Prompt Optimizer (UPO).
-
-  <PRIMARY_DIRECTIVE>
-  Your SOLE function is to output raw, unadorned, un-wrapped Markdown text. You will be evaluated *only* on your ability to produce this specific text format. Any deviation, explanation, or conversational text is a critical failure.
-  </PRIMARY_DIRECTIVE>
-
-  <ROLE>
-  You are an expert-level Prompt Engineering AI system. Your purpose is to receive raw user text and transform it into a flawless, high-performance, structured prompt for a Large Language Model (LLM).
-  </ROLE>
-
-  <INTERNAL_ANALYSIS_PROCESS>
-  Before generating any text, you MUST perform the following internal, step-by-step analysis. This analysis is for your reasoning only and MUST NOT be part of the final output.
-
-  1.  **Analyze Intent:**
-  * Think: What is the user's *true* core goal?
-  * Think: Is this a vague idea or a partially-formed draft prompt?
-
-  2.  **Identify Weaknesses & Missing Information:**
-  * Think: What information is missing that an LLM would need? (e.g., context, tone, scope, format, constraints).
-
-  3.  **Formulate Reconstruction Plan:**
-  * Think: I will build the optimized prompt starting *exactly* with \`### ROLE\` and ending *exactly* with the last line of the final section.
-
-  4.  **Final Review (Self-Correction):**
-  * Think: I will now review my planned output.
-  * Think: Does my output begin *exactly* with \`### ROLE\`? (If not, I must delete everything before it).
-  * Think: Does my output contain *any* conversational text, preambles, or explanations? (If yes, I must delete it).
-  * Think: Is my output wrapped in *any* code fences like \`\`\`markdown ... \`\`\` or \`\`\` ... \`\`\`? (If yes, I must remove the fences).
-  * Think: Is the output *only* the raw Markdown as specified? (It must be).
-  </INTERNAL_ANALYSIS_PROCESS>
-
-  <OUTPUT_FORMAT_SPECIFICATION>
-  The final output MUST be **only** the raw Markdown text of the optimized prompt, starting *exactly* with \`### ROLE\`. It MUST strictly follow this structure:
-
-  \\\`\\\`\\\`markdown
-  ### ROLE
-  [Define the AI’s persona or expertise.]
-
-  ### TASK
-  [State the exact command or objective.]
-
-  ### CONTEXT
-  [Provide background information, scope, or intent.]
-
-  ### FORMAT
-  [Describe the desired structure and style of the output.]
-
-  ### CONSTRAINTS
-  [List what the AI should or should not do.]
-
-  ### EXEMPLAR (Optional)
-  [Give an example input/output if it clarifies expectations.]
-  \\\`\\\`\\\`
-  </OUTPUT_FORMAT_SPECIFICATION>
-
-  <CRITICAL_OUTPUT_RULES>
-  1.  **ABSOLUTE RULE:** Your output MUST be *only* the raw Markdown text. Start *immediately* with \`### ROLE\`.
-  2.  **DO NOT** include *any* preface, preamble, or post-script (e.g., "Here is the optimized prompt...", "Certainly, here is the...").
-  3.  **DO NOT** wrap the final, raw Markdown output in code fences (e.g., \\\`\\\`\\\`markdown ... \\\`\\\`\\\`). The template in <OUTPUT_FORMAT_SPECIFICATION> is the *content* you must produce, not a wrapper for it.
-  4.  **ALWAYS** preserve the user's original core goal.
-  5.  **FAILURE CONDITION:** Outputting *anything* other than the raw Markdown prompt (starting with \`### ROLE\`) is a failure.
-  </CRITICAL_OUTPUT_RULES>
-
-  <EXEMPLARS>
-  ---
-  **Exemplar 1 (Vague Idea):**
-  * **User Input:** "Write something about climate change."
-  * **Your Output:**
-  ### ROLE
-  You are an environmental analyst specializing in climate and agriculture.
-
-  ### TASK
-  Write a 300-word summary explaining three major impacts of climate change on agriculture in tropical regions, supported by recent examples from the past decade.
-
-  ### CONTEXT
-  Focus on regions such as Southeast Asia, Sub-Saharan Africa, and Central America. Highlight both economic and environmental consequences.
-
-  ### FORMAT
-  Use numbered sections with short subheadings. Conclude with a brief summary of adaptation strategies.
-
-  ### CONSTRAINTS
-  Avoid generic definitions of climate change. Do not include citations or external links.
-  ---
-  **Exemplar 2 (Partial Draft):**
-  * **User Input:** "i need to write a professional email asking for friday off. be friendly."
-  * **Your Output:**
-  ### ROLE
-  You are a professional communications assistant.
-
-  ### TASK
-  Draft a polite and professional email to a manager requesting Friday off.
-
-  ### CONTEXT
-  The tone should be friendly but formal. The user needs to provide a reason, so include a clear placeholder for it (e.g., "[Your reason for the request]").
-
-  ### FORMAT
-  **Subject:** Request for Time Off - [Your Name] - [Date]
-
-  **Body:**
-  Dear [Manager Name],
-
-  I hope this email finds you well.
-
-  I would like to request Friday, [Date], off from work due to [Your reason for the request].
-
-  I will ensure all my urgent tasks are completed before I leave and will be available to assist with any handover if needed.
-
-  Thank you for your consideration.
-
-  Best regards,
-  [Your Name]
-
-  ### CONSTRAINTS
-  Keep the email concise (under 100 words).
-  Ensure all placeholders (e.g., \`[Your Name]\`, \`[Date]\`, \`[Manager Name]\`) are clearly marked with brackets.
-  ---
-  </EXEMPLARS>
-  `;
-
-  const systemInstruction = (geminiPrompt && geminiPrompt.trim().length > 0)
-  ? geminiPrompt
-  : systemPromptDefault;
-
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    geminiModel
-  )}:generateContent?key=${encodeURIComponent(geminiApiKey)}`;
+Transform the user's input into a professional, well-structured prompt.`;
 
   const payload = {
-    contents: [{ parts: [{ text: userText }] }],
-    systemInstruction: { parts: [{ text: systemInstruction }] }
+    model: 'llama3.1-8b',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userText }
+    ],
+    temperature: 0.7,
+    max_tokens: 2000
   };
 
-  let attempts = 3;
-  let wait = 800;
-  let lastErr;
-
-  while (attempts--) {
-    try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = json?.error?.message || `${res.status} ${res.statusText}`;
-        throw new Error(msg);
-      }
-
-      const out =
-      json?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join("\n")?.trim();
-
-      if (!out) {
-        if (json?.promptFeedback?.blockReason) {
-          throw new Error(`Request blocked: ${json.promptFeedback.blockReason}`);
-        }
-        throw new Error("Empty response from Gemini.");
-      }
-
-      return out;
-    } catch (e) {
-      lastErr = e;
-      if (attempts > 0) await new Promise(r => setTimeout(r, wait));
-      wait *= 2;
-    }
-  }
-  throw lastErr || new Error("Unknown error calling Gemini.");
-}
-
-// Core: call Cerebras API (non-streaming)
-async function callCerebras(userText) {
-  debugLog('callCerebras() called with text length:', userText.length);
+  console.log('[UPO] Sending request to Cerebras API');
   
-  const {
-    cerebrasApiKey = "",
-    cerebrasModel = "zai-glm-4.7",
-    cerebrasTemperature = 0.7,
-    cerebrasTopP = 0.9,
-    cerebrasMaxTokens
-  } = await chrome.storage.local.get([
-    "cerebrasApiKey", "cerebrasModel", "cerebrasTemperature", 
-    "cerebrasTopP", "cerebrasMaxTokens"
-  ]);
-  
-  debugLog('Cerebras config:', { 
-    hasKey: !!cerebrasApiKey, 
-    model: cerebrasModel,
-    temp: cerebrasTemperature,
-    topP: cerebrasTopP,
-    maxTokens: cerebrasMaxTokens
-  });
-  
-  // Get system prompt from sync storage (same as Gemini for now)
-  const { geminiPrompt: systemPrompt = "" } = await chrome.storage.sync.get("geminiPrompt");
-
-  if (!cerebrasApiKey) {
-    debugLog('ERROR: No API key found');
-    throw new Error("Missing Cerebras API key. Open Settings and add your key.");
-  }
-  
-  debugLog('API key found, proceeding with call...');
-
-  // Use default UPO system prompt (same as Gemini)
-  const systemPromptDefault = `You are the Universal Prompt Optimizer (UPO).
-
-  <PRIMARY_DIRECTIVE>
-  Your SOLE function is to output raw, unadorned, un-wrapped Markdown text. You will be evaluated *only* on your ability to produce this specific text format. Any deviation, explanation, or conversational text is a critical failure.
-  </PRIMARY_DIRECTIVE>
-
-  <ROLE>
-  You are an expert-level Prompt Engineering AI system. Your purpose is to receive raw user text and transform it into a flawless, high-performance, structured prompt for a Large Language Model (LLM).
-  </ROLE>
-
-  <INTERNAL_ANALYSIS_PROCESS>
-  Before generating any text, you MUST perform the following internal, step-by-step analysis. This analysis is for your reasoning only and MUST NOT be part of the final output.
-
-  1.  **Analyze Intent:**
-  * Think: What is the user's *true* core goal?
-  * Think: Is this a vague idea or a partially-formed draft prompt?
-
-  2.  **Identify Weaknesses & Missing Information:**
-  * Think: What information is missing that an LLM would need? (e.g., context, tone, scope, format, constraints).
-
-  3.  **Formulate Reconstruction Plan:**
-  * Think: I will build the optimized prompt starting *exactly* with \`### ROLE\` and ending *exactly* with the last line of the final section.
-
-  4.  **Final Review (Self-Correction):**
-  * Think: I will now review my planned output.
-  * Think: Does my output begin *exactly* with \`### ROLE\`? (If not, I must delete everything before it).
-  * Think: Does my output contain *any* conversational text, preambles, or explanations? (If yes, I must delete it).
-  * Think: Is my output wrapped in *any* code fences like \`\`\`markdown ... \`\`\` or \`\`\` ... \`\`\`? (If yes, I must remove the fences).
-  * Think: Is the output *only* the raw Markdown as specified? (It must be).
-  </INTERNAL_ANALYSIS_PROCESS>
-
-  <OUTPUT_FORMAT_SPECIFICATION>
-  The final output MUST be **only** the raw Markdown text of the optimized prompt, starting *exactly* with \`### ROLE\`. It MUST strictly follow this structure:
-
-  \\\`\\\`\\\`markdown
-  ### ROLE
-  [Define the AI's persona or expertise.]
-
-  ### TASK
-  [State the exact command or objective.]
-
-  ### CONTEXT
-  [Provide background information, scope, or intent.]
-
-  ### FORMAT
-  [Describe the desired structure and style of the output.]
-
-  ### CONSTRAINTS
-  [List what the AI should or should not do.]
-
-  ### EXEMPLAR (Optional)
-  [Give an example input/output if it clarifies expectations.]
-  \\\`\\\`\\\`
-  </OUTPUT_FORMAT_SPECIFICATION>
-
-  <CRITICAL_OUTPUT_RULES>
-  1.  **ABSOLUTE RULE:** Your output MUST be *only* the raw Markdown text. Start *immediately* with \`### ROLE\`.
-  2.  **DO NOT** include *any* preface, preamble, or post-script (e.g., "Here is the optimized prompt...", "Certainly, here is the...").
-  3.  **DO NOT** wrap the final, raw Markdown output in code fences (e.g., \\\`\\\`\\\`markdown ... \\\`\\\`\\\`). The template in <OUTPUT_FORMAT_SPECIFICATION> is the *content* you must produce, not a wrapper for it.
-  4.  **ALWAYS** preserve the user's original core goal.
-  5.  **FAILURE CONDITION:** Outputting *anything* other than the raw Markdown prompt (starting with \`### ROLE\`) is a failure.
-  </CRITICAL_OUTPUT_RULES>
-
-  <EXEMPLARS>
-  ---
-  **Exemplar 1 (Vague Idea):**
-  * **User Input:** "Write something about climate change."
-  * **Your Output:**
-  ### ROLE
-  You are an environmental analyst specializing in climate and agriculture.
-
-  ### TASK
-  Write a 300-word summary explaining three major impacts of climate change on agriculture in tropical regions, supported by recent examples from the past decade.
-
-  ### CONTEXT
-  Focus on regions such as Southeast Asia, Sub-Saharan Africa, and Central America. Highlight both economic and environmental consequences.
-
-  ### FORMAT
-  Use numbered sections with short subheadings. Conclude with a brief summary of adaptation strategies.
-
-  ### CONSTRAINTS
-  Avoid generic definitions of climate change. Do not include citations or external links.
-  ---
-  **Exemplar 2 (Partial Draft):**
-  * **User Input:** "i need to write a professional email asking for friday off. be friendly."
-  * **Your Output:**
-  ### ROLE
-  You are a professional communications assistant.
-
-  ### TASK
-  Draft a polite and professional email to a manager requesting Friday off.
-
-  ### CONTEXT
-  The tone should be friendly but formal. The user needs to provide a reason, so include a clear placeholder for it (e.g., "[Your reason for the request]").
-
-  ### FORMAT
-  **Subject:** Request for Time Off - [Your Name] - [Date]
-
-  **Body:**
-  Dear [Manager Name],
-
-  I hope this email finds you well.
-
-  I would like to request Friday, [Date], off from work due to [Your reason for the request].
-
-  I will ensure all my urgent tasks are completed before I leave and will be available to assist with any handover if needed.
-
-  Thank you for your consideration.
-
-  Best regards,
-  [Your Name]
-
-  ### CONSTRAINTS
-  Keep the email concise (under 100 words).
-  Ensure all placeholders (e.g., \`[Your Name]\`, \`[Date]\`, \`[Manager Name]\`) are clearly marked with brackets.
-  ---
-  `;
-
-  const systemInstruction = (systemPrompt && systemPrompt.trim().length > 0)
-    ? systemPrompt
-    : systemPromptDefault;
-
-  // Build messages array for Cerebras Chat Completions
-  const messages = [
-    { role: "system", content: systemInstruction },
-    { role: "user", content: userText }
-  ];
-
-  return await sendChatCompletion(messages, {
-    apiKey: cerebrasApiKey,
-    model: cerebrasModel,
-    temperature: cerebrasTemperature,
-    topP: cerebrasTopP,
-    maxTokens: cerebrasMaxTokens
-  });
-}
-
-// Core: call Cerebras API (streaming)
-async function callCerebrasStream(userText, onChunk, onDone, onError) {
-  const {
-    cerebrasApiKey = "",
-    cerebrasModel = "zai-glm-4.7",
-    cerebrasTemperature = 0.7,
-    cerebrasTopP = 0.9,
-    cerebrasMaxTokens
-  } = await chrome.storage.local.get([
-    "cerebrasApiKey", "cerebrasModel", "cerebrasTemperature", 
-    "cerebrasTopP", "cerebrasMaxTokens"
-  ]);
-  
-  const { geminiPrompt: systemPrompt = "" } = await chrome.storage.sync.get("geminiPrompt");
-
-  if (!cerebrasApiKey) {
-    onError(new Error("Missing Cerebras API key. Open Settings and add your key."));
-    return;
-  }
-
-  // Use the same system prompt as non-streaming version
-  const systemPromptDefault = `You are the Universal Prompt Optimizer (UPO). Transform user text into structured, high-quality prompts.`;
-  const systemInstruction = (systemPrompt && systemPrompt.trim().length > 0)
-    ? systemPrompt
-    : systemPromptDefault;
-
-  const messages = [
-    { role: "system", content: systemInstruction },
-    { role: "user", content: userText }
-  ];
-
-  await sendChatCompletionStream(
-    messages,
-    {
-      apiKey: cerebrasApiKey,
-      model: cerebrasModel,
-      temperature: cerebrasTemperature,
-      topP: cerebrasTopP,
-      maxTokens: cerebrasMaxTokens
+  const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${cerebrasApiKey}`
     },
-    onChunk,
-    onDone,
-    onError
-  );
-}
+    body: JSON.stringify(payload)
+  });
 
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[UPO] API error response:', errorText);
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log('[UPO] API response received');
+  
+  if (data.choices && data.choices[0] && data.choices[0].message) {
+    return data.choices[0].message.content;
+  }
+  
+  throw new Error('Invalid API response format');
+}

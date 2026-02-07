@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>UPO Options</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1f2937;
+      margin-top: 0;
+    }
+    label {
+      display: block;
+      margin: 20px 0 8px;
+      font-weight: 600;
+      color: #374151;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    .status {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 6px;
+      display: none;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+      display: block;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      display: block;
+    }
+    .info {
+      background: #dbeafe;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #1e40af;
+    }
+    .shortcut {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    code {
+      background: #1f2937;
+      color: #10b981;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ UPO Settings</h1>
+    
+    <div class="info">
+      <strong>Get your Cerebras API key:</strong><br>
+      Visit <a href="https://cloud.cerebras.ai" target="_blank">cloud.cerebras.ai</a> to get your free API key.
+    </div>
+    
+    <label for="apiKey">Cerebras API Key:</label>
+    <input type="password" id="apiKey" placeholder="csk-...">
+    
+    <button id="saveBtn">Save Settings</button>
+    <button id="testBtn" style="background: #059669; margin-left: 10px;">Test Connection</button>
+    
+    <div id="status" class="status"></div>
+    
+    <div class="shortcut">
+      <strong>💡 How to use:</strong><br>
+      1. Select any text on a webpage<br>
+      2. Press <code>Ctrl+Q</code> (or <code>Cmd+Q</code> on Mac)<br>
+      3. Your text will be optimized by AI!<br>
+      <br>
+      You can also right-click selected text and choose "Optimize with UPO"
+    </div>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>
