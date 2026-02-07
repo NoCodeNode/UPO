@@ -99,16 +99,16 @@ async function optimizeNow() {
     return;
   }
 
-  // Get current provider from storage
-  const { provider = "gemini" } = await chrome.storage.sync.get("provider");
+  // Get current provider from storage (local storage)
+  const { selectedProvider = "gemini" } = await chrome.storage.local.get("selectedProvider");
 
   setCursorLoading(true);
   statusStart();
-  toast(`Optimizing with ${provider === 'cerebras' ? 'Cerebras' : 'Gemini'}…`);
+  toast(`Optimizing with ${selectedProvider === 'cerebras' ? 'Cerebras' : 'Gemini'}…`);
 
   try {
     // Choose API call based on provider
-    const messageType = provider === "cerebras" ? "UPO_CALL_CEREBRAS" : "UPO_CALL_GEMINI";
+    const messageType = selectedProvider === "cerebras" ? "UPO_CALL_CEREBRAS" : "UPO_CALL_GEMINI";
     
     const resp = await chrome.runtime.sendMessage({
       type: messageType,

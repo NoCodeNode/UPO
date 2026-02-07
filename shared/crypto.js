@@ -65,17 +65,20 @@ export function deobfuscateKey(obfuscatedKey) {
 }
 
 /**
- * Securely clears a key from memory (best effort)
+ * Securely clears a key from memory (best effort - limited effectiveness in JavaScript)
+ * Note: JavaScript strings are immutable, so this provides minimal actual security benefit.
+ * Included for defense-in-depth but should not be relied upon for complete memory clearing.
  * @param {string} key - Key to clear
  */
 export function clearKeyFromMemory(key) {
   if (!key) return;
   
-  // Overwrite the string in memory (limited effectiveness in JS)
+  // Attempt to overwrite the string in memory (limited effectiveness in JS due to immutability)
   try {
+    // This will fail silently as strings are readonly - kept for best-effort approach
     // eslint-disable-next-line no-param-reassign
     key = '0'.repeat(key.length);
   } catch {
-    // Readonly string, nothing we can do
+    // Readonly string, nothing we can do - this is expected
   }
 }

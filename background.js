@@ -16,14 +16,24 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === "install") {
     // Initialize defaults if not present
-    const existing = await chrome.storage.sync.get(["geminiModel", "geminiPrompt", "onboarded", "provider"]);
-    if (!existing.geminiModel) {
+    const existing = await chrome.storage.local.get(["geminiModel", "geminiPrompt", "onboarded", "selectedProvider"]);
+    if (!existing.selectedProvider) {
+      await chrome.storage.local.set({
+        selectedProvider: "gemini" // Default provider
+      });
+    }
+    // Initialize Gemini defaults in sync storage
+    const geminiData = await chrome.storage.sync.get(["geminiModel", "geminiPrompt"]);
+    if (!geminiData.geminiModel) {
       await chrome.storage.sync.set({
         geminiModel: "gemini-2.5-pro",
-        geminiPrompt: "",
-        provider: "gemini", // Default provider
-        onboarded: false
+        geminiPrompt: ""
       });
+    }
+    // Initialize onboarded flag in sync
+    const { onboarded } = await chrome.storage.sync.get("onboarded");
+    if (!onboarded) {
+      await chrome.storage.sync.set({ onboarded: false });
     }
     // Initialize Cerebras defaults in local storage
     const cerebrasData = await chrome.storage.local.get([
@@ -350,8 +360,7 @@ async function callCerebras(userText) {
     cerebrasModel = "zai-glm-4.7",
     cerebrasTemperature = 0.7,
     cerebrasTopP = 0.9,
-    cerebrasMaxTokens,
-    geminiPrompt = ""
+    cerebrasMaxTokens
   } = await chrome.storage.local.get([
     "cerebrasApiKey", "cerebrasModel", "cerebrasTemperature", 
     "cerebrasTopP", "cerebrasMaxTokens"

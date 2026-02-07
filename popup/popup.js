@@ -7,9 +7,9 @@ const providerName = document.getElementById("providerName");
 // Load and display current provider
 async function loadProviderInfo() {
   try {
-    const { provider = "gemini" } = await chrome.storage.sync.get("provider");
+    const { selectedProvider = "gemini" } = await chrome.storage.local.get("selectedProvider");
     
-    if (provider === "cerebras") {
+    if (selectedProvider === "cerebras") {
       providerIcon.textContent = "🧠";
       providerName.textContent = "Cerebras Cloud";
       providerName.style.color = "#22c55e";
